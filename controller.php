@@ -139,7 +139,7 @@ function startDatabaseDados()
   global $database;
   if (!$database) {
     $database = new databaseCls();
-    $database->section->select_db("my_database");
+    $database->section->select_db("voip");
   }
   if ($database->createDatabase()) {
     //echo "createDatabase() Rodou com sucesso\n";
