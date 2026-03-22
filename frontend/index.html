@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeleCRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0d0f14;--surface:#161921;--surface2:#1e2230;--border:#2a2f42;--accent:#00e5a0;--accent2:#0099ff;--danger:#ff4560;--warn:#ffb800;--text:#e8eaf0;--muted:#6b7280;--green:#00c47a;--purple:#a78bfa;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+  /* LOGIN */
+  #loginScreen{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+  .login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:380px;max-width:95vw;text-align:center;position:relative;z-index:1;}
+  .login-logo-img{max-height:60px;max-width:220px;object-fit:contain;margin-bottom:10px;display:none;}
+  .login-logo{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;margin-bottom:4px;}
+  .login-sub{color:var(--muted);font-size:13px;margin-bottom:28px;}
+  .login-field{display:flex;flex-direction:column;gap:6px;text-align:left;margin-bottom:14px;}
+  .login-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+  .login-field input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+  .login-field input:focus{border-color:var(--accent);}
+  .login-btn{width:100%;background:var(--accent);border:none;color:#0d0f14;padding:12px;border-radius:8px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:all .15s;}
+  .login-btn:hover{background:#00ffb3;}
+  .login-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .login-error{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.3);border-radius:8px;padding:10px;color:var(--danger);font-size:12px;margin-bottom:12px;display:none;}
+
+  /* APP */
+  #app{position:relative;z-index:1;display:none;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+  .header-logo-img{height:32px;object-fit:contain;display:none;}
+  .logo{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);}
+  .logo span{color:var(--text);}
+  .nav-tabs{display:flex;gap:4px;margin-left:16px;}
+  .nav-tab{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+  .nav-tab:hover{color:var(--text);}
+  .nav-tab.active{background:rgba(0,229,160,.1);color:var(--accent);}
+  .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .user-chip{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .badge{background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;}
+  .badge.admin{background:rgba(167,139,250,.1);color:var(--purple);border-color:rgba(167,139,250,.2);}
+  .header-stats{display:flex;gap:16px;}
+  .stat-chip{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .stat-chip strong{color:var(--accent);font-size:15px;}
+  .btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--muted);font-size:12px;font-family:'Sora',sans-serif;cursor:pointer;transition:all .15s;}
+  .btn-logout:hover{border-color:var(--danger);color:var(--danger);}
+
+  /* PAGES */
+  .page{display:none;}.page.active{display:block;}
+
+  /* TOOLBAR */
+  .toolbar{padding:20px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:none;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
+  .btn-add{background:var(--accent);color:#0d0f14;}
+  .btn-add:hover{background:#00ffb3;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,229,160,.3);}
+  .btn-remove{background:var(--danger);color:#fff;}
+  .btn-remove:hover{background:#ff6b80;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent2);color:var(--accent2);}
+  .btn-warn{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-warn:hover{border-color:var(--warn);color:var(--warn);}
+  .btn-excel{background:#1d6f42;color:#fff;}
+  .btn-excel:hover{background:#25a159;}
+  .btn-csv{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-csv:hover{border-color:var(--green);color:var(--green);}
+  .search-wrap{margin-left:auto;position:relative;}
+  .search-wrap input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 14px 9px 36px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;width:260px;outline:none;transition:border-color .2s;}
+  .search-wrap input:focus{border-color:var(--accent2);}
+  .search-wrap input::placeholder{color:var(--muted);}
+  .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+
+  .filters{padding:0 32px 16px;display:flex;gap:10px;flex-wrap:wrap;}
+  .filter-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-family:'Sora',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;}
+  .filter-btn.active,.filter-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.07);}
+
+  .table-wrap{padding:0 32px 24px;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{text-align:left;padding:10px 14px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid rgba(42,47,66,.5);transition:background .12s;}
+  tbody tr:hover{background:rgba(255,255,255,.03);}
+  tbody td{padding:12px 14px;vertical-align:middle;}
+  .id-cell{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);}
+  .company-cell{font-weight:500;color:var(--accent2);max-width:260px;}
+  .company-link{color:var(--accent2);text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:5px;}
+  .company-link:hover{color:var(--accent);text-decoration:underline;}
+  .company-link .link-icon{font-size:11px;opacity:.6;flex-shrink:0;}
+  .num-pill{display:inline-block;background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.15);border-radius:4px;padding:2px 7px;margin:1px 2px;font-size:11.5px;}
+  .op-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(0,153,255,.12);color:var(--accent2);border:1px solid rgba(0,153,255,.2);font-family:'Space Mono',monospace;}
+  .server-cell{font-family:'Space Mono',monospace;font-size:12px;color:var(--warn);}
+  .server-link{font-family:'Space Mono',monospace;font-size:12px;color:var(--warn);text-decoration:none;}
+  .server-link:hover{color:var(--accent);text-decoration:underline;}
+  .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+  .status-badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .status-ativo{background:rgba(0,196,122,.12);color:var(--green);border:1px solid rgba(0,196,122,.25);}
+  .status-ativo::before{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .status-inativo{background:rgba(255,69,96,.1);color:var(--danger);border:1px solid rgba(255,69,96,.2);}
+  .status-inativo::before{background:var(--danger);}
+  .status-pendente{background:rgba(255,184,0,.1);color:var(--warn);border:1px solid rgba(255,184,0,.2);}
+  .status-pendente::before{background:var(--warn);}
+  .cb{width:40px;}
+  input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+  .result-count{padding:0 32px 10px;font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .empty-state{text-align:center;padding:60px;color:var(--muted);}
+  .empty-state .icon{font-size:40px;margin-bottom:12px;}
+  .row-actions{display:flex;gap:6px;}
+  .row-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .12s;font-family:'Sora',sans-serif;}
+  .row-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+  .row-btn.del:hover{border-color:var(--danger);color:var(--danger);}
+  .pagination{display:flex;align-items:center;gap:8px;padding:0 32px 24px;font-size:12px;color:var(--muted);}
+  .pg-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;}
+  .pg-btn:hover{border-color:var(--accent2);}
+  .pg-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* HISTORICO */
+  .page-header{padding:24px 32px 0;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;}
+  .page-header .dot{width:8px;height:8px;border-radius:50%;}
+  .acao-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;font-family:'Space Mono',monospace;text-transform:uppercase;}
+  .acao-CRIAR{background:rgba(0,196,122,.12);color:var(--green);}
+  .acao-EDITAR{background:rgba(0,153,255,.12);color:var(--accent2);}
+  .acao-REMOVER,.acao-REMOVER_LOTE{background:rgba(255,69,96,.1);color:var(--danger);}
+  .acao-EXPORTAR_EXCEL,.acao-EXPORTAR_CSV{background:rgba(255,184,0,.1);color:var(--warn);}
+  .acao-IMPORTAR_CSV,.acao-CONFIG{background:rgba(167,139,250,.1);color:var(--purple);}
+  .acao-default{background:rgba(107,114,128,.1);color:var(--muted);}
+  .det-cell{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* USUARIOS */
+  .users-grid{padding:20px 32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;}
+  .user-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
+  .user-card-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .user-avatar{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .user-info .name{font-weight:600;font-size:14px;}
+  .user-info .uname{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .role-badge{padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:700;}
+  .role-admin{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.2);}
+  .role-operador{background:rgba(0,153,255,.1);color:var(--accent2);border:1px solid rgba(0,153,255,.2);}
+  .user-card-actions{margin-top:14px;display:flex;gap:8px;padding-top:14px;border-top:1px solid var(--border);}
+
+  /* CONFIGURAÇÕES */
+  .config-wrap{padding:24px 32px;max-width:700px;}
+  .config-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px;}
+  .config-section h3{font-size:15px;font-weight:600;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+  .config-section h3 .dot{width:7px;height:7px;border-radius:50%;}
+  .config-row{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .config-row:last-child{margin-bottom:0;}
+  .config-row label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+  .config-row input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+  .config-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08);}
+  .logo-preview-wrap{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+  .logo-preview{width:120px;height:60px;background:var(--surface2);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:border-color .2s;}
+  .logo-preview:hover{border-color:var(--accent);}
+  .logo-preview img{max-width:110px;max-height:50px;object-fit:contain;}
+  .logo-preview .placeholder{color:var(--muted);font-size:12px;text-align:center;padding:8px;}
+  .logo-actions{display:flex;flex-direction:column;gap:8px;}
+  .preview-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;gap:12px;margin-top:16px;}
+  .preview-box-label{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px;}
+  .preview-app-logo{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);}
+  .preview-app-logo span{color:var(--text);}
+
+  /* MODAIS */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:500px;max-width:95vw;max-height:92vh;overflow-y:auto;padding:28px;position:relative;animation:slideUp .2s ease;}
+  .modal.sm{width:380px;}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+  .modal-title .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  .form-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+  .form-group input,.form-group select,.form-group textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08);}
+  .form-group select option{background:var(--surface2);}
+  .form-group textarea{resize:vertical;min-height:70px;}
+  .form-hint{font-size:11px;color:var(--muted);margin-top:2px;}
+  .tags-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:32px;}
+  .num-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);border-radius:6px;padding:3px 9px;font-size:12px;font-family:'Space Mono',monospace;color:var(--accent);}
+  .num-tag button{background:none;border:none;cursor:pointer;color:var(--danger);font-size:14px;line-height:1;padding:0;}
+  .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+  .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 20px;border-radius:8px;font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+  .btn-cancel:hover{border-color:var(--muted);color:var(--text);}
+  .btn-save{background:var(--accent);border:none;color:#0d0f14;padding:9px 24px;border-radius:8px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+  .btn-save:hover{background:#00ffb3;}
+  .btn-save:disabled{opacity:.5;cursor:not-allowed;}
+  .close-btn{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+  .close-btn:hover{color:var(--text);}
+  .op-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+  .op-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;}
+  .op-item button{background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;}
+
+  /* Drop zone importar */
+  .drop-zone{border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;}
+  .drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(0,229,160,.05);}
+  .drop-zone .dz-icon{font-size:36px;margin-bottom:8px;}
+  .drop-zone p{color:var(--muted);font-size:13px;}
+  .import-results{margin-top:16px;background:var(--surface2);border-radius:8px;padding:14px;font-size:12.5px;}
+  .import-results .ok{color:var(--green);}
+  .import-results .err{color:var(--danger);margin-top:6px;}
+
+  .perm-item{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer;transition:all .15s;}
+  .perm-item:hover{border-color:var(--accent);color:var(--accent);}
+  .perm-item input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 24px rgba(0,229,160,.15);animation:fadeIn .2s ease;}
+  .toast.show{display:block;}
+  .toast.error{border-color:var(--danger);}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  /* PORTABILIDADE */
+  .status-porta{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+  .status-porta::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .sp-aberto{background:rgba(0,153,255,.12);color:var(--accent2);border:1px solid rgba(0,153,255,.25);}
+  .sp-aberto::before{background:var(--accent2);}
+  .sp-analise{background:rgba(255,184,0,.1);color:var(--warn);border:1px solid rgba(255,184,0,.25);}
+  .sp-analise::before{background:var(--warn);box-shadow:0 0 6px var(--warn);}
+  .sp-aguardando{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.25);}
+  .sp-aguardando::before{background:var(--purple);}
+  .sp-concluido{background:rgba(0,196,122,.12);color:var(--green);border:1px solid rgba(0,196,122,.25);}
+  .sp-concluido::before{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .sp-cancelado{background:rgba(255,69,96,.1);color:var(--danger);border:1px solid rgba(255,69,96,.25);}
+  .sp-cancelado::before{background:var(--danger);}
+  .doc-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;}
+  .doc-icon{font-size:20px;flex-shrink:0;}
+  .doc-info{flex:1;min-width:0;}
+  .doc-info .doc-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .doc-info .doc-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .doc-cat{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600;background:rgba(0,229,160,.08);color:var(--accent);border:1px solid rgba(0,229,160,.2);}
+  .drop-doc-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+  .drop-doc-zone:hover,.drop-doc-zone.drag-over{border-color:var(--accent);background:rgba(0,229,160,.04);}
+  .porta-stats{display:flex;gap:12px;padding:0 32px 16px;flex-wrap:wrap;}
+  .porta-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:8px;}
+  .porta-stat strong{font-size:16px;font-family:'Space Mono',monospace;}
+  @media(max-width:700px){
+    .toolbar,.filters,.table-wrap,.result-count,.page-header,.users-grid,.config-wrap,.pagination{padding-left:16px;padding-right:16px;}
+    header{padding:0 16px;}
+    .nav-tabs{display:none;}
+    .search-wrap input{width:150px;}
+    .form-grid{grid-template-columns:1fr;}
+    .header-stats{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <img class="login-logo-img" id="loginLogoImg" src="" alt="Logo">
+    <div class="login-logo" id="loginLogoText"><span id="loginNomePre" style="color:var(--accent)">Tele</span><span id="loginNomePos">CRM</span></div>
+    <div class="login-sub" id="loginSubtitulo">Gestão de Números de Telefonia</div>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-field"><label>Usuário</label><input type="text" id="lUser" placeholder="seu.usuario" autocomplete="username"></div>
+    <div class="login-field"><label>Senha</label><input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <img class="header-logo-img" id="headerLogoImg" src="" alt="">
+    <div class="logo" id="headerLogoText"><span id="headerNome1" style="color:var(--accent)">Tele</span><span id="headerNome2">CRM</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('numeros',this)">📋 Números</button>
+      <button class="nav-tab" onclick="showPage('historico',this)">📜 Histórico</button>
+      <button class="nav-tab" id="tabPorta" onclick="showPage('porta',this)">📋 Portabilidade</button>
+      <button class="nav-tab" id="tabUsuarios" onclick="showPage('usuarios',this)" style="display:none">👥 Usuários</button>
+      <button class="nav-tab" id="tabConfig" onclick="showPage('config',this)" style="display:none">⚙️ Configurações</button>
+    </div>
+    <div class="header-right">
+      <div class="header-stats">
+        <div class="stat-chip">Total: <strong id="statTotal">—</strong></div>
+        <div class="stat-chip">Ativos: <strong id="statAtivo">—</strong></div>
+        <div class="stat-chip">Inativos: <strong id="statInativo">—</strong></div>
+      </div>
+      <div class="user-chip"><span id="userNome">—</span><span class="badge" id="userRole">—</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <!-- NÚMEROS -->
+  <div class="page active" id="pageNumeros">
+    <div class="toolbar">
+      <button class="btn btn-add" onclick="openModal()">＋ Novo Número</button>
+      <button class="btn btn-remove" onclick="removeSelected()">🗑 Remover</button>
+      <button class="btn btn-secondary" onclick="editSelected()">✏️ Editar</button>
+      <button class="btn btn-warn" onclick="openOpsModal()">⚙️ Operadoras</button>
+      <button class="btn btn-secondary" onclick="openImportModal()">📥 Importar CSV</button>
+      <button class="btn btn-excel" onclick="exportExcel()">📊 Excel</button>
+      <button class="btn btn-csv" onclick="exportCsv()">📄 CSV</button>
+      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Empresa, número, IP..." oninput="debounceLoad()"></div>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('todos',this)">Todos</button>
+      <button class="filter-btn" onclick="setFilter('Ativo',this)">✅ Ativos</button>
+      <button class="filter-btn" onclick="setFilter('Inativo',this)">❌ Inativos</button>
+      <button class="filter-btn" onclick="setFilter('Pendente',this)">⏳ Pendentes</button>
+    </div>
+    <div class="result-count" id="resultCount">Carregando...</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th class="cb"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th><th>ID</th><th>Empresa</th><th>Número(s)</th><th>Operadora</th><th>Servidor</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted)">Carregando...</td></tr></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display:none"><div class="icon">📭</div><p>Nenhum registro encontrado.</p></div>
+    </div>
+    <div class="pagination" id="paginacao"></div>
+  </div>
+
+  <!-- PORTABILIDADE -->
+  <div class="page" id="pagePorta">
+    <div class="page-header"><div class="dot" style="background:var(--accent2)"></div>Pedidos de Portabilidade</div>
+    <div class="toolbar" style="padding-top:16px">
+      <button class="btn btn-add" id="btnNovoPorta" onclick="openPortaModal()">＋ Novo Pedido</button>
+      <select id="portaFiltroStatus" class="btn btn-secondary" style="padding:8px 12px;cursor:pointer" onchange="loadPorta()">
+        <option value="todos">Todos os status</option>
+        <option value="Aberto">Aberto</option>
+        <option value="Em analise">Em análise</option>
+        <option value="Aguardando documentos">Aguardando documentos</option>
+        <option value="Concluido">Concluído</option>
+        <option value="Cancelado">Cancelado</option>
+      </select>
+      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="portaSearch" placeholder="Empresa, CPF, protocolo..." oninput="debouncePorta()"></div>
+    </div>
+    <div class="porta-stats" id="portaStats"></div>
+    <div class="result-count" id="portaCount">Carregando...</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Empresa</th><th>Titular / Doc</th><th>Números</th><th>Origem → Destino</th><th>Protocolo</th><th>Status</th><th>Abertura</th><th>Docs</th><th>Ações</th></tr></thead>
+        <tbody id="tbodyPorta"></tbody>
+      </table>
+      <div id="emptyPorta" class="empty-state" style="display:none"><div class="icon">📋</div><p>Nenhum pedido encontrado.</p></div>
+    </div>
+    <div class="pagination" id="paginacaoPorta"></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="page" id="pageHistorico">
+    <div class="page-header"><div class="dot" style="background:var(--purple)"></div>Histórico de Alterações</div>
+    <div class="toolbar" style="padding-top:16px">
+      <select id="histFiltroAcao" class="btn btn-secondary" style="padding:8px 12px;cursor:pointer" onchange="loadHistorico()">
+        <option value="">Todas as ações</option>
+        <option value="CRIAR">Criar</option><option value="EDITAR">Editar</option>
+        <option value="REMOVER">Remover</option><option value="REMOVER_LOTE">Remover Lote</option>
+        <option value="IMPORTAR_CSV">Importar CSV</option>
+        <option value="EXPORTAR_EXCEL">Exportar Excel</option><option value="EXPORTAR_CSV">Exportar CSV</option>
+        <option value="CONFIG">Configurações</option>
+      </select>
+      <select id="histFiltroEnt" class="btn btn-secondary" style="padding:8px 12px;cursor:pointer" onchange="loadHistorico()">
+        <option value="">Todas entidades</option>
+        <option value="numero">Números</option><option value="usuario">Usuários</option>
+        <option value="operadora">Operadoras</option><option value="sistema">Sistema</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadHistorico()">🔄 Atualizar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Entidade</th><th>ID</th><th>Detalhes</th></tr></thead>
+        <tbody id="tbodyHist"></tbody>
+      </table>
+      <div id="emptyHist" class="empty-state" style="display:none"><div class="icon">📜</div><p>Nenhum histórico encontrado.</p></div>
+    </div>
+    <div class="pagination" id="paginacaoHist"></div>
+  </div>
+
+  <!-- USUÁRIOS -->
+  <div class="page" id="pageUsuarios">
+    <div class="page-header"><div class="dot" style="background:var(--accent2)"></div>Gerenciar Usuários</div>
+    <div class="toolbar" style="padding-top:16px"><button class="btn btn-add" onclick="openUserModal()">＋ Novo Usuário</button></div>
+    <div class="users-grid" id="usersGrid"></div>
+  </div>
+
+  <!-- CONFIGURAÇÕES -->
+  <div class="page" id="pageConfig">
+    <div class="page-header"><div class="dot" style="background:var(--accent)"></div>Configurações do Sistema</div>
+    <div class="config-wrap">
+
+      <!-- Nome e subtítulo -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:var(--accent)"></div>Identidade do Sistema</h3>
+        <div class="config-row">
+          <label>Nome do Sistema</label>
+          <input type="text" id="cfgNome" placeholder="TeleCRM" maxlength="30">
+          <span style="font-size:11px;color:var(--muted);margin-top:4px">Este nome aparece no header e na tela de login.</span>
+        </div>
+        <div class="config-row">
+          <label>Subtítulo / Descrição</label>
+          <input type="text" id="cfgSubtitulo" placeholder="Gestão de Números de Telefonia" maxlength="60">
+        </div>
+        <div style="margin-top:4px;margin-bottom:16px">
+          <div class="preview-box-label">Pré-visualização do header:</div>
+          <div class="preview-box">
+            <div class="preview-app-logo" id="previewLogoText"><span id="prevNome1" style="color:var(--accent)">Tele</span><span id="prevNome2">CRM</span></div>
+          </div>
+        </div>
+        <button class="btn btn-add" onclick="saveConfig()">💾 Salvar Nome</button>
+      </div>
+
+      <!-- Logo -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:var(--accent2)"></div>Logo / Ícone</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Faça upload de uma imagem PNG, JPG ou SVG. Recomendado: fundo transparente, até 2MB.</p>
+        <div class="logo-preview-wrap">
+          <div class="logo-preview" id="logoPreview" onclick="document.getElementById('logoFile').click()">
+            <div class="placeholder" id="logoPlaceholder">🖼️<br>Clique para<br>selecionar</div>
+            <img id="logoPreviewImg" src="" style="display:none">
+          </div>
+          <div class="logo-actions">
+            <button class="btn btn-add" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('logoFile').click()">📁 Escolher imagem</button>
+            <button class="btn btn-remove" style="font-size:12px;padding:8px 14px" onclick="removeLogo()">🗑 Remover logo</button>
+          </div>
+        </div>
+        <input type="file" id="logoFile" accept="image/*" style="display:none" onchange="handleLogoFile(this)">
+        <div style="margin-bottom:16px">
+          <div class="preview-box-label">Como vai aparecer no header e login:</div>
+          <div class="preview-box" style="gap:10px">
+            <img id="previewLogoImg" src="" style="height:32px;object-fit:contain;display:none">
+            <div class="preview-app-logo" id="previewLogoTextFallback"><span style="color:var(--accent)" id="prevNome1b">Tele</span><span id="prevNome2b">CRM</span></div>
+          </div>
+        </div>
+        <button class="btn btn-excel" style="font-size:13px" id="btnUploadLogo" onclick="uploadLogo()" disabled>⬆️ Fazer Upload da Logo</button>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:#a78bfa"></div>💾 Backup & Restauração</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Exporta todos os dados (números, portabilidades, documentos, configurações) em um arquivo JSON. Para restaurar, importe o arquivo gerado.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-add" onclick="downloadBackup()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.4);color:#a78bfa">⬇️ Baixar Backup</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('restoreFileInput').click()" style="background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);color:#f59e0b">⬆️ Restaurar Backup</button>
+          <input type="file" id="restoreFileInput" accept=".json" style="display:none" onchange="uploadRestore(this)">
+        </div>
+        <div id="backupStatus" style="margin-top:12px;font-size:12px;color:var(--muted)"></div>
+      </div>
+
+      <!-- Webhook -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:var(--accent2)"></div>Webhook de Notificações</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+          Toda criação, edição, remoção ou importação disparará um <strong>POST</strong> para esta URL com os dados da ação em JSON.
+        </p>
+        <div class="config-row">
+          <label>URL do Webhook</label>
+          <input type="url" id="cfgWebhook" placeholder="https://hooks.zapier.com/..." style="font-family:'Space Mono',monospace;font-size:12px;">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+          <button class="btn btn-add" onclick="saveWebhook()" style="font-size:12px;padding:8px 16px">💾 Salvar URL</button>
+          <button class="btn btn-secondary" onclick="testWebhook()" id="btnTestWebhook" style="font-size:12px;padding:8px 16px">🧪 Testar agora</button>
+          <button class="btn btn-remove" onclick="removeWebhook()" style="font-size:12px;padding:8px 16px">🗑 Remover</button>
+        </div>
+        <div id="webhookStatus" style="margin-top:12px;font-size:12px;display:none"></div>
+        <div style="margin-top:16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Payload de exemplo enviado</div>
+          <pre style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.6;overflow-x:auto">{
+  "evento":      "CRIAR",
+  "entidade":    "numero",
+  "entidade_id": 42,
+  "detalhes":    { "empresa": "ACME LTDA", "status": "Ativo" },
+  "usuario":     { "id": 1, "username": "admin", "nome": "Administrador" },
+  "timestamp":   "2026-02-26T15:30:00.000Z",
+  "sistema":     "TeleCRM"
+}</pre>
+        </div>
+      </div>
+
+      <!-- Senha -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:var(--warn)"></div>Alterar Minha Senha</h3>
+        <div class="config-row"><label>Senha Atual</label><input type="password" id="cfgSenhaAtual" placeholder="••••••••"></div>
+        <div class="config-row"><label>Nova Senha</label><input type="password" id="cfgSenhaNova" placeholder="••••••••"></div>
+        <div class="config-row"><label>Confirmar Nova Senha</label><input type="password" id="cfgSenhaConf" placeholder="••••••••"></div>
+        <button class="btn btn-warn" onclick="alterarSenha()" style="margin-top:4px">🔒 Alterar Senha</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PORTABILIDADE -->
+<div class="overlay" id="overlayPorta" onclick="if(event.target===this)closePortaModal()">
+  <div class="modal" style="width:680px;max-height:90vh">
+    <button class="close-btn" onclick="closePortaModal()">✕</button>
+    <div class="modal-title"><div class="dot" style="background:var(--accent2)"></div><span id="portaModalTitle">Novo Pedido de Portabilidade</span></div>
+
+    <div class="form-grid">
+      <!-- Dados da empresa -->
+      <div class="form-group full"><label>Empresa *</label>
+        <input type="text" id="pEmpresa" placeholder="Nome da empresa" oninput="filterPortaEmpresas()">
+        <div id="portaEmpresaSugest" style="position:relative"></div>
+      </div>
+      <div class="form-group"><label>CPF / CNPJ</label><input type="text" id="pDoc" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Nome do Titular</label><input type="text" id="pTitular" placeholder="Nome completo"></div>
+      <div class="form-group"><label>Operadora Origem</label><select id="pOpOrigem"><option value="">— Selecione —</option></select></div>
+      <div class="form-group"><label>Operadora Destino</label><select id="pOpDestino"><option value="">— Selecione —</option></select></div>
+      <div class="form-group"><label>Protocolo <span style="font-size:10px;color:var(--accent);background:rgba(0,229,160,.1);padding:1px 6px;border-radius:4px;margin-left:4px">auto</span></label><input type="text" id="pProtocolo" placeholder="Gerado automaticamente ao salvar"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="pStatus">
+          <option value="Aberto" selected>Aberto</option>
+          <option value="Em analise">Em análise</option>
+          <option value="Aguardando documentos">Aguardando documentos</option>
+          <option value="Concluido">Concluído</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Data Abertura</label><input type="date" id="pDataAbertura"></div>
+      <div class="form-group"><label>Data Previsão</label><input type="date" id="pDataPrevisao"></div>
+      <div class="form-group" id="pDataConclusaoGroup"><label>Data Conclusão</label><input type="date" id="pDataConclusao"></div>
+      <div class="form-group full">
+        <label>Números a Portar</label>
+        <div style="display:flex;gap:8px"><input type="text" id="pNumInput" placeholder="Digite e pressione Enter (suporte a faixas)" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addPortaTag();}"><button class="btn-save" style="padding:9px 14px;border-radius:8px;flex-shrink:0" onclick="addPortaTag()">+</button></div>
+        <div class="form-hint">Use <strong style="color:var(--accent)">33221120-33221130</strong> para faixa sequencial</div>
+        <div class="tags-wrap" id="portaTagsWrap"></div>
+      </div>
+      <div class="form-group full"><label>Observações</label><textarea id="pObs" placeholder="Anotações sobre o pedido..."></textarea></div>
+    </div>
+
+    <!-- DOCUMENTOS -->
+    <div id="portaDocsSection" style="margin-top:20px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;padding-top:16px;border-top:1px solid var(--border)">Documentos Anexados</div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="docCategoria" class="btn btn-secondary" style="padding:7px 12px;cursor:pointer">
+          <option value="CPF">CPF</option>
+          <option value="CNH">CNH</option>
+          <option value="Contrato Social">Contrato Social</option>
+          <option value="Conta de Telefone">Conta de Telefone</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <button class="btn btn-secondary" onclick="document.getElementById('docFileInput').click()">📎 Anexar documento</button>
+        <input type="file" id="docFileInput" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx" multiple onchange="uploadDocs(this.files)">
+      </div>
+      <div id="docsList"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closePortaModal()">Cancelar</button>
+      <button class="btn" id="btnGerarTermo" onclick="gerarTermoPortabilidade()" style="background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:none">🖨 Gerar Termo</button>
+      <button class="btn-save" id="btnPortaSave" onclick="savePorta()">Salvar Pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TERMO PORTABILIDADE -->
+<div class="overlay" id="overlayTermo" onclick="if(event.target===this)closeTermoModal()" style="z-index:1100;display:none">
+  <div class="modal" style="width:720px;max-height:95vh;overflow-y:auto">
+    <button class="close-btn" onclick="closeTermoModal()">✕</button>
+    <div class="modal-title"><div class="dot" style="background:var(--accent2)"></div>Termo de Portabilidade Numérica</div>
+    <div id="termoConteudo" style="font-family:'Times New Roman',Times,serif;font-size:14px;line-height:1.7;color:#111;background:#fff;padding:40px 50px;border:1px solid #ddd;border-radius:6px;margin-bottom:16px"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeTermoModal()">Fechar</button>
+      <button class="btn-save" onclick="imprimirTermo()">🖨 Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NÚMERO -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="modal-title"><div class="dot"></div><span id="modalTitle">Novo Número</span></div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Empresa *</label><input type="text" id="fEmpresa" placeholder="Nome da empresa"></div>
+      <div class="form-group full">
+        <label>Número(s)</label>
+        <div style="display:flex;gap:8px"><input type="text" id="fNumInput" placeholder="Digite e pressione Enter" style="flex:1"><button class="btn-save" style="padding:9px 14px;border-radius:8px;flex-shrink:0" onclick="addNumTag()">+</button></div>
+        <div class="form-hint">Enter ou vírgula para múltiplos. Use <strong style="color:var(--accent)">33221120-33221130</strong> para faixa sequencial (máx. 100)</div>
+        <div class="tags-wrap" id="tagsWrap"></div>
+      </div>
+      <div class="form-group"><label>Operadora</label><select id="fOperadora"><option value="">— Selecione —</option></select></div>
+      <div class="form-group"><label>Status</label><select id="fStatus"><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option><option value="Pendente">Pendente</option></select></div>
+      <div class="form-group"><label>Servidor (IP)</label><input type="text" id="fServidor" placeholder="179.127.199.50"></div>
+      <div class="form-group"><label>Data de Ativação</label><input type="date" id="fData"></div>
+      <div class="form-group full"><label>Contrato / URL Sugar</label><input type="text" id="fContrato" placeholder="URL do contrato"></div>
+      <div class="form-group full"><label>Observações</label><textarea id="fObs" placeholder="Anotações..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-save" id="btnSave" onclick="saveRecord()">Salvar Registro</button></div>
+  </div>
+</div>
+
+<!-- MODAL OPERADORAS -->
+<div class="overlay" id="overlayOps" onclick="if(event.target===this)closeOpsModal()">
+  <div class="modal sm">
+    <button class="close-btn" onclick="closeOpsModal()">✕</button>
+    <div class="modal-title"><div class="dot" style="background:var(--warn)"></div>Gerenciar Operadoras</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="newOpInput" placeholder="Nova operadora..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;">
+      <button class="btn-save" style="padding:9px 14px;border-radius:8px;flex-shrink:0" onclick="addOperadora()">Add</button>
+    </div>
+    <div class="op-list" id="opList"></div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="overlay" id="overlayImport" onclick="if(event.target===this)closeImportModal()">
+  <div class="modal">
+    <button class="close-btn" onclick="closeImportModal()">✕</button>
+    <div class="modal-title"><div class="dot" style="background:var(--purple)"></div>Importar CSV</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Faça upload de um arquivo CSV.<br><a onclick="downloadTemplate()" style="color:var(--accent);cursor:pointer;text-decoration:underline">📥 Baixar template de exemplo</a></p>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFile').click()" ondragover="dzDragOver(event)" ondragleave="dzDragLeave()" ondrop="dzDrop(event)">
+      <div class="dz-icon">📂</div>
+      <p><strong>Clique para selecionar</strong> ou arraste aqui</p>
+      <p style="margin-top:4px;font-size:12px">CSV separado por ponto-e-vírgula (;)</p>
+    </div>
+    <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="handleCsvFile(this.files[0])">
+    <div class="import-results" id="importResults" style="display:none"></div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeImportModal()">Fechar</button><button class="btn-save" id="btnImport" onclick="doImport()" disabled>Importar</button></div>
+  </div>
+</div>
+
+<!-- MODAL USUÁRIO -->
+<div class="overlay" id="overlayUser" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal" style="width:520px">
+    <button class="close-btn" onclick="closeUserModal()">✕</button>
+    <div class="modal-title"><div class="dot" style="background:var(--accent2)"></div><span id="userModalTitle">Novo Usuário</span></div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      <div class="form-group full"><label>Nome *</label><input type="text" id="uNome" placeholder="Nome completo"></div>
+      <div class="form-group"><label>Username *</label><input type="text" id="uUsername" placeholder="usuario.nome"></div>
+      <div class="form-group"><label id="uPassLabel">Senha *</label><input type="password" id="uPassword" placeholder="••••••••"></div>
+      <div class="form-group"><label>Perfil</label><select id="uRole" onchange="togglePermsSection()"><option value="operador">Operador</option><option value="admin">Admin</option></select></div>
+      <div class="form-group" id="uAtivoGroup" style="display:none"><label>Status</label><select id="uAtivo"><option value="1">Ativo</option><option value="0">Inativo</option></select></div>
+    </div>
+    <div id="permsSection" style="margin-top:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        <span>Permissões</span>
+        <button type="button" onclick="toggleAllPerms(true)" style="background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:2px 8px;color:var(--accent);font-size:10px;cursor:pointer;font-family:'Sora',sans-serif">Marcar todas</button>
+        <button type="button" onclick="toggleAllPerms(false)" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'Sora',sans-serif">Desmarcar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="ver_numeros"> Ver números</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="criar_numero"> Adicionar número</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="editar_numero"> Editar número</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="remover_numero"> Remover número</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="exportar"> Exportar (Excel/CSV)</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="importar"> Importar CSV</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="ver_historico"> Ver histórico</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="gerenciar_operadoras"> Gerenciar operadoras</label>
+        <label class="perm-item full" style="grid-column:1/-1;background:rgba(0,153,255,.05);border-color:rgba(0,153,255,.2);"><span style="color:var(--accent2);font-weight:600;font-size:12px">— Portabilidade —</span></label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="ver_portabilidade"> Ver portabilidade</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="criar_portabilidade"> Criar pedido</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="editar_portabilidade"> Editar pedido / docs</label>
+        <label class="perm-item"><input type="checkbox" class="perm-cb" value="remover_portabilidade"> Remover pedido</label>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeUserModal()">Cancelar</button><button class="btn-save" id="btnUserSave" onclick="saveUser()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="logoFilePending" style="display:none" accept="image/*">
+
+<script>
+const API='/api';
+let filterStatus='todos', editingId=null, editingUserId=null;
+let numTags=[], operadoras=[], importFile=null, logoFilePending=null;
+let debounceTimer=null, currentPage=1, histPage=1;
+let currentUser=null, appConfig={};
+
+async function api(path, opts={}) {
+  const res = await fetch(API+path, { headers:{'Content-Type':'application/json'}, credentials:'include', ...opts, body:opts.body?JSON.stringify(opts.body):undefined });
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(data.error||'Erro na API');
+  return data;
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+async function loadConfig() {
+  try {
+    appConfig = await api('/config');
+    applyConfig(appConfig);
+  } catch(e) { console.warn('Config não carregada', e); }
+}
+
+function applyConfig(cfg) {
+  const nome = cfg.app_nome || 'TeleCRM';
+  const sub  = cfg.app_subtitulo || 'Gestão de Números de Telefonia';
+  const logo = cfg.app_logo || '';
+
+  // Divide o nome: primeira metade colorida
+  const mid = Math.ceil(nome.length / 2);
+  const p1 = nome.slice(0, mid), p2 = nome.slice(mid);
+
+  // Header
+  if (logo) {
+    document.getElementById('headerLogoImg').src = logo;
+    document.getElementById('headerLogoImg').style.display = 'block';
+    document.getElementById('headerLogoText').style.display = 'none';
+  } else {
+    document.getElementById('headerLogoImg').style.display = 'none';
+    document.getElementById('headerLogoText').style.display = 'flex';
+    document.getElementById('headerNome1').textContent = p1;
+    document.getElementById('headerNome2').textContent = p2;
+  }
+
+  // Login
+  if (logo) {
+    document.getElementById('loginLogoImg').src = logo;
+    document.getElementById('loginLogoImg').style.display = 'block';
+    document.getElementById('loginLogoText').style.display = 'none';
+  } else {
+    document.getElementById('loginLogoImg').style.display = 'none';
+    document.getElementById('loginLogoText').style.display = 'block';
+    document.getElementById('loginNomePre').textContent = p1;
+    document.getElementById('loginNomePos').textContent = p2;
+  }
+  document.getElementById('loginSubtitulo').textContent = sub;
+  document.title = nome;
+
+  // Campos config
+  document.getElementById('cfgNome').value = nome;
+  document.getElementById('cfgSubtitulo').value = sub;
+  updatePreview();
+
+  // Preview logo
+  if (logo) {
+    document.getElementById('logoPreviewImg').src = logo;
+    document.getElementById('logoPreviewImg').style.display = 'block';
+    document.getElementById('logoPlaceholder').style.display = 'none';
+    document.getElementById('previewLogoImg').src = logo;
+    document.getElementById('previewLogoImg').style.display = 'block';
+    document.getElementById('previewLogoTextFallback').style.display = 'none';
+  }
+}
+
+function updatePreview() {
+  const nome = document.getElementById('cfgNome').value || 'TeleCRM';
+  const mid = Math.ceil(nome.length / 2);
+  const p1 = nome.slice(0, mid), p2 = nome.slice(mid);
+  document.getElementById('prevNome1').textContent = p1;
+  document.getElementById('prevNome2').textContent = p2;
+  document.getElementById('prevNome1b').textContent = p1;
+  document.getElementById('prevNome2b').textContent = p2;
+}
+document.getElementById('cfgNome').addEventListener('input', updatePreview);
+
+async function saveConfig() {
+  const nome = document.getElementById('cfgNome').value.trim();
+  const sub  = document.getElementById('cfgSubtitulo').value.trim();
+  if (!nome) { toast('❌ Informe o nome do sistema.',true); return; }
+  await api('/config', { method:'PUT', body:{ app_nome:nome, app_subtitulo:sub } });
+  await loadConfig();
+  toast('✅ Nome atualizado com sucesso!');
+}
+
+function handleLogoFile(input) {
+  const f = input.files[0];
+  if (!f) return;
+  logoFilePending = f;
+  const url = URL.createObjectURL(f);
+  document.getElementById('logoPreviewImg').src = url;
+  document.getElementById('logoPreviewImg').style.display = 'block';
+  document.getElementById('logoPlaceholder').style.display = 'none';
+  document.getElementById('previewLogoImg').src = url;
+  document.getElementById('previewLogoImg').style.display = 'block';
+  document.getElementById('previewLogoTextFallback').style.display = 'none';
+  document.getElementById('btnUploadLogo').disabled = false;
+}
+
+async function uploadLogo() {
+  if (!logoFilePending) return;
+  const fd = new FormData(); fd.append('logo', logoFilePending);
+  const res = await fetch(`${API}/config/logo`, { method:'POST', credentials:'include', body:fd });
+  const data = await res.json();
+  if (data.ok) {
+    logoFilePending = null;
+    document.getElementById('btnUploadLogo').disabled = true;
+    await loadConfig();
+    toast('✅ Logo atualizada!');
+  } else { toast('❌ ' + (data.error||'Erro'), true); }
+}
+
+async function removeLogo() {
+  if (!confirm('Remover a logo atual?')) return;
+  await api('/config/logo', { method:'DELETE' });
+  document.getElementById('logoPreviewImg').style.display = 'none';
+  document.getElementById('logoPlaceholder').style.display = 'block';
+  document.getElementById('previewLogoImg').style.display = 'none';
+  document.getElementById('previewLogoTextFallback').style.display = 'flex';
+  logoFilePending = null;
+  document.getElementById('btnUploadLogo').disabled = true;
+  await loadConfig();
+  toast('🗑 Logo removida.');
+}
+
+// ── WEBHOOK ───────────────────────────────────────────────────────────────────
+async function loadWebhook() {
+  try {
+    const r = await api('/config/webhook');
+    document.getElementById('cfgWebhook').value = r.webhook_url || '';
+  } catch(e) {}
+}
+
+async function saveWebhook() {
+  const url = document.getElementById('cfgWebhook').value.trim();
+  if (url && !url.startsWith('http')) { toast('❌ URL deve começar com http:// ou https://', true); return; }
+  await api('/config/webhook', { method: 'PUT', body: { webhook_url: url } });
+  toast(url ? '✅ Webhook salvo!' : '✅ Webhook removido!');
+  setWebhookStatus('');
+}
+
+async function removeWebhook() {
+  if (!confirm('Remover o webhook?')) return;
+  document.getElementById('cfgWebhook').value = '';
+  await api('/config/webhook', { method: 'PUT', body: { webhook_url: '' } });
+  toast('🗑 Webhook removido.');
+  setWebhookStatus('');
+}
+
+async function testWebhook() {
+  const url = document.getElementById('cfgWebhook').value.trim();
+  if (!url) { toast('❌ Informe a URL primeiro.', true); return; }
+  const btn = document.getElementById('btnTestWebhook');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+  setWebhookStatus('');
+  try {
+    const r = await api('/config/webhook/test', { method: 'POST', body: { webhook_url: url } });
+    setWebhookStatus(`✅ Webhook enviado! Servidor respondeu: HTTP ${r.status}`, 'ok');
+    toast('✅ Teste enviado com sucesso!');
+  } catch(e) {
+    setWebhookStatus(`❌ Falhou: ${e.message}`, 'err');
+    toast('❌ Erro no teste: ' + e.message, true);
+  } finally { btn.disabled = false; btn.textContent = '🧪 Testar agora'; }
+}
+
+function setWebhookStatus(msg, type='') {
+  const el = document.getElementById('webhookStatus');
+  if (!msg) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.style.color = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--danger)' : 'var(--muted)';
+  el.textContent = msg;
+}
+
+async function alterarSenha() {
+  const atual = document.getElementById('cfgSenhaAtual').value;
+  const nova  = document.getElementById('cfgSenhaNova').value;
+  const conf  = document.getElementById('cfgSenhaConf').value;
+  if (!atual || !nova) { toast('❌ Preencha todos os campos.',true); return; }
+  if (nova !== conf)   { toast('❌ As senhas não conferem.',true); return; }
+  if (nova.length < 6) { toast('❌ Senha deve ter ao menos 6 caracteres.',true); return; }
+  try {
+    await api('/usuarios/'+currentUser.id, { method:'PUT', body:{ nome:currentUser.nome, role:currentUser.role, ativo:1, password:nova } });
+    ['cfgSenhaAtual','cfgSenhaNova','cfgSenhaConf'].forEach(id=>document.getElementById(id).value='');
+    toast('✅ Senha alterada com sucesso!');
+  } catch(e) { toast('❌ '+e.message,true); }
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('lUser').value.trim();
+  const password = document.getElementById('lPass').value;
+  const err = document.getElementById('loginError'), btn = document.getElementById('loginBtn');
+  err.style.display='none'; btn.disabled=true; btn.textContent='Entrando...';
+  try {
+    const r = await api('/auth/login',{method:'POST',body:{username,password}});
+    if (r.token) localStorage.setItem('telecrm_token', r.token);
+    currentUser = r.user; initApp();
+  } catch(e) { err.textContent=e.message; err.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Entrar'; }
+}
+
+async function doLogout() {
+  localStorage.removeItem('telecrm_token');
+  await api('/auth/logout',{method:'POST'}).catch(()=>{});
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('lPass').value='';
+}
+
+document.getElementById('lPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('lUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('lPass').focus(); });
+
+async function checkSession() {
+  await loadConfig(); // carrega config antes de tudo
+  try { currentUser = await api('/auth/me'); initApp(); }
+  catch(e) { document.getElementById('loginScreen').style.display='flex'; }
+}
+
+function hasPermission(perm) {
+  if (currentUser.role === 'admin') return true;
+  return (currentUser.permissoes || []).includes(perm);
+}
+
+function initApp() {
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userNome').textContent = currentUser.nome;
+  const roleEl = document.getElementById('userRole');
+  roleEl.textContent = currentUser.role;
+  roleEl.className = 'badge'+(currentUser.role==='admin'?' admin':'');
+
+  // Abas controladas por role — esconde explicitamente para não-admin
+  const isAdmin = currentUser.role === 'admin';
+  document.getElementById('tabUsuarios').style.display = isAdmin ? '' : 'none';
+  document.getElementById('tabConfig').style.display   = isAdmin ? '' : 'none';
+  document.getElementById('tabPorta').style.display    = hasPermission('ver_portabilidade') ? '' : 'none';
+
+  // Botões da toolbar controlados por permissão
+  applyPermissionsUI();
+  loadOperadoras();
+  if (hasPermission('ver_numeros')) loadData();
+}
+
+function applyPermissionsUI() {
+  // Botões da toolbar de números
+  const btnAdd    = document.querySelector('.btn-add');
+  const btnRemove = document.querySelector('.btn-remove');
+  const btnEdit   = document.querySelector('[onclick="editSelected()"]');
+  const btnOps    = document.querySelector('[onclick="openOpsModal()"]');
+  const btnImport = document.querySelector('[onclick="openImportModal()"]');
+  const btnExcel  = document.querySelector('[onclick="exportExcel()"]');
+  const btnCsv    = document.querySelector('[onclick="exportCsv()"]');
+
+  if (btnAdd)    btnAdd.style.display    = hasPermission('criar_numero') ? '' : 'none';
+  if (btnRemove) btnRemove.style.display = hasPermission('remover_numero') ? '' : 'none';
+  if (btnEdit)   btnEdit.style.display   = hasPermission('editar_numero') ? '' : 'none';
+  if (btnOps)    btnOps.style.display    = hasPermission('gerenciar_operadoras') ? '' : 'none';
+  if (btnImport) btnImport.style.display = hasPermission('importar') ? '' : 'none';
+  if (btnExcel)  btnExcel.style.display  = hasPermission('exportar') ? '' : 'none';
+  if (btnCsv)    btnCsv.style.display    = hasPermission('exportar') ? '' : 'none';
+
+  // Ações nas linhas - esconde botões de editar/remover se sem permissão
+  window._canEdit   = hasPermission('editar_numero');
+  window._canRemove = hasPermission('remover_numero');
+  const btnNP = document.getElementById('btnNovoPorta');
+  if(btnNP) btnNP.style.display = hasPermission('criar_portabilidade') ? '' : 'none';
+}
+
+// ── NAVEGAÇÃO ─────────────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const pg = document.getElementById('page'+name.charAt(0).toUpperCase()+name.slice(1));
+  if(pg) pg.classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='porta')     { if(!hasPermission('ver_portabilidade')){toast('❌ Sem permissão.',true);return;} loadPorta(); }
+  if(name==='historico') { if(!hasPermission('ver_historico')){toast('❌ Sem permissão.',true);return;} loadHistorico(); }
+  if(name==='usuarios')  { if(currentUser.role!=='admin'){toast('❌ Sem permissão.',true);return;} loadUsuarios(); }
+  if(name==='config')    { if(currentUser.role!=='admin'){toast('❌ Sem permissão.',true);return;} loadConfig(); loadWebhook(); }
+}
+
+// ── OPERADORAS ────────────────────────────────────────────────────────────────
+async function loadOperadoras() {
+  operadoras = await api('/operadoras');
+  const sel = document.getElementById('fOperadora'), cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecione —</option>'+operadoras.map(o=>`<option value="${o}">${o}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+function renderOpList() {
+  document.getElementById('opList').innerHTML = operadoras.map(o=>
+    `<div class="op-item"><span>${o}</span><button onclick="deleteOperadora('${o}')">✕</button></div>`
+  ).join('')||'<p style="color:var(--muted);font-size:13px;padding:8px">Nenhuma cadastrada.</p>';
+}
+async function addOperadora() {
+  const inp=document.getElementById('newOpInput'), nome=inp.value.trim().toUpperCase();
+  if(!nome) return;
+  try { await api('/operadoras',{method:'POST',body:{nome}}); inp.value=''; await loadOperadoras(); renderOpList(); toast('✅ Operadora adicionada!'); }
+  catch(e) { toast('❌ '+e.message,true); }
+}
+async function deleteOperadora(nome) {
+  if(!confirm(`Remover "${nome}"?`)) return;
+  await api('/operadoras/'+encodeURIComponent(nome),{method:'DELETE'}); await loadOperadoras(); renderOpList(); toast('🗑 Removida.');
+}
+function openOpsModal() { renderOpList(); document.getElementById('overlayOps').classList.add('show'); }
+function closeOpsModal() { document.getElementById('overlayOps').classList.remove('show'); }
+document.getElementById('newOpInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addOperadora(); });
+
+// ── TABELA NÚMEROS ────────────────────────────────────────────────────────────
+async function loadData() {
+  const q=document.getElementById('searchInput').value.trim();
+  const params=new URLSearchParams({q,status:filterStatus,page:currentPage,limit:50});
+  const {data,total,stats}=await api('/numeros?'+params);
+  document.getElementById('statTotal').textContent  = stats.total;
+  document.getElementById('statAtivo').textContent  = stats.ativos;
+  document.getElementById('statInativo').textContent= stats.inativos;
+  document.getElementById('resultCount').textContent= `${total} registro${total!==1?'s':''}`;
+  const tbody=document.getElementById('tbody'),empty=document.getElementById('emptyState');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';}
+  else{
+    empty.style.display='none';
+    tbody.innerHTML=data.map(r=>{
+      const sc=r.status==='Ativo'?'status-ativo':r.status==='Inativo'?'status-inativo':'status-pendente';
+      const nums=(r.numeros||[]).map(n=>`<span class="num-pill">${n}</span>`).join('');
+      const dt=r.data_ativacao?' ('+fmtDate(r.data_ativacao)+')':'';
+      return`<tr><td class="cb"><input type="checkbox" class="row-cb" data-id="${r.id}"></td><td class="id-cell">#${r.id}</td><td class="company-cell" title="${r.obs||''}">${r.contrato?`<a class="company-link" href="${r.contrato}" target="_blank" rel="noopener" title="Abrir contrato: ${r.contrato}">${r.empresa} <span class="link-icon">🔗</span></a>`:r.empresa}</td><td class="number-cell">${nums||'—'}</td><td><span class="op-badge">${r.operadora||'—'}</span></td><td class="server-cell">${r.servidor?`<a class="server-link" href="${r.servidor.startsWith('http')?r.servidor:'http://'+r.servidor}" target="_blank" rel="noopener" title="${r.servidor}">${r.servidor}</a>`:'—'}</td><td><span class="status-badge ${sc}">${r.status}${dt}</span></td><td><div class="row-actions"><button class="row-btn" onclick="editById(${r.id})">✏️</button><button class="row-btn del" onclick="deleteById(${r.id})">🗑</button></div></td></tr>`;
+    }).join('');
+  }
+  const totalPages=Math.ceil(total/50);
+  const pg=document.getElementById('paginacao');
+  if(totalPages<=1){pg.innerHTML='';return;}
+  pg.innerHTML=`<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>← Anterior</button><span>Página ${currentPage} de ${totalPages}</span><button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>Próxima →</button>`;
+}
+function goPage(p){currentPage=p;loadData();}
+function debounceLoad(){currentPage=1;clearTimeout(debounceTimer);debounceTimer=setTimeout(loadData,300);}
+function fmtDate(d){if(!d)return'';const s=d.split('T')[0],p=s.split('-');return`${p[2]}/${p[1]}/${p[0]}`;}
+function fmtDatetime(d){if(!d)return'';const dt=new Date(d);return dt.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function setFilter(f,btn){filterStatus=f;currentPage=1;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');loadData();}
+
+// ── CRUD NÚMEROS ──────────────────────────────────────────────────────────────
+function openModal(id=null){
+  editingId=id;numTags=[];document.getElementById('tagsWrap').innerHTML='';
+  if(id){api('/numeros/'+id).then(r=>{document.getElementById('modalTitle').textContent='Editar Registro';document.getElementById('fEmpresa').value=r.empresa;document.getElementById('fOperadora').value=r.operadora||'';document.getElementById('fStatus').value=r.status;document.getElementById('fServidor').value=r.servidor||'';document.getElementById('fData').value=r.data_ativacao?r.data_ativacao.split('T')[0]:'';document.getElementById('fContrato').value=r.contrato||'';document.getElementById('fObs').value=r.obs||'';numTags=[...(r.numeros||[])];renderTags();});}
+  else{document.getElementById('modalTitle').textContent='Novo Número';['fEmpresa','fServidor','fContrato','fObs'].forEach(i=>document.getElementById(i).value='');document.getElementById('fOperadora').value='';document.getElementById('fStatus').value='Ativo';document.getElementById('fData').value=new Date().toISOString().split('T')[0];}
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('fEmpresa').focus(),100);
+}
+function closeModal(){document.getElementById('overlay').classList.remove('show');editingId=null;}
+function parseRange(val) {
+  // Detecta faixa: 33221120-33221130 ou 33221120 a 33221130 ou 33221120 até 33221130
+  const rangeMatch = val.match(/^(\d+)\s*(?:-|a|até)\s*(\d+)$/i);
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1]), end = parseInt(rangeMatch[2]);
+    if (end > start && (end - start) <= 100) {
+      const nums = [];
+      for (let i = start; i <= end; i++) nums.push(String(i));
+      return nums;
+    }
+  }
+  return val ? [val] : [];
+}
+function addNumTag(){
+  const inp=document.getElementById('fNumInput'), val=inp.value.trim();
+  if(!val) return;
+  val.split(/[,;]+/).forEach(part => {
+    part = part.trim();
+    if (!part) return;
+    parseRange(part).forEach(n => { if(n && !numTags.includes(n)) numTags.push(n); });
+  });
+  inp.value=''; renderTags();
+}
+function removeTag(i){numTags.splice(i,1);renderTags();}
+function renderTags(){document.getElementById('tagsWrap').innerHTML=numTags.map((n,i)=>`<span class="num-tag">${n} <button onclick="removeTag(${i})">×</button></span>`).join('');}
+async function saveRecord(){
+  const empresa=document.getElementById('fEmpresa').value.trim();
+  if(!empresa){toast('❌ Informe o nome da empresa.',true);return;}
+  const pending=document.getElementById('fNumInput').value.trim();
+  if(pending){document.getElementById('fNumInput').value=pending;addNumTag();}
+  const payload={empresa,numeros:numTags,operadora:document.getElementById('fOperadora').value,status:document.getElementById('fStatus').value,servidor:document.getElementById('fServidor').value.trim(),data_ativacao:document.getElementById('fData').value||null,contrato:document.getElementById('fContrato').value.trim(),obs:document.getElementById('fObs').value.trim()};
+  const btn=document.getElementById('btnSave');btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    if(editingId){await api('/numeros/'+editingId,{method:'PUT',body:payload});toast('✅ Atualizado!');}
+    else{await api('/numeros',{method:'POST',body:payload});toast('✅ Adicionado!');}
+    closeModal();loadData();
+  }catch(e){toast('❌ '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Salvar Registro';}
+}
+function editById(id){openModal(id);}
+async function deleteById(id){if(!confirm('Remover?'))return;await api('/numeros/'+id,{method:'DELETE'});toast('🗑 Removido.');loadData();}
+async function removeSelected(){const ids=[...document.querySelectorAll('.row-cb:checked')].map(c=>+c.dataset.id);if(!ids.length){toast('⚠️ Selecione ao menos um.',true);return;}if(!confirm(`Remover ${ids.length}?`))return;await api('/numeros',{method:'DELETE',body:{ids}});toast(`🗑 ${ids.length} removido(s).`);loadData();}
+function editSelected(){const ids=[...document.querySelectorAll('.row-cb:checked')].map(c=>+c.dataset.id);if(ids.length!==1){toast('⚠️ Selecione exatamente 1.',true);return;}openModal(ids[0]);}
+function toggleAll(cb){document.querySelectorAll('.row-cb').forEach(c=>c.checked=cb.checked);}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+function exportExcel(){const p=new URLSearchParams({q:document.getElementById('searchInput').value.trim(),status:filterStatus});window.location.href=`${API}/export/excel?${p}`;}
+function exportCsv(){const p=new URLSearchParams({q:document.getElementById('searchInput').value.trim(),status:filterStatus});window.location.href=`${API}/export/csv?${p}`;}
+function openImportModal(){importFile=null;document.getElementById('importResults').style.display='none';document.getElementById('btnImport').disabled=true;document.getElementById('dropZone').querySelector('p').innerHTML='<strong>Clique para selecionar</strong> ou arraste aqui';document.getElementById('overlayImport').classList.add('show');}
+function closeImportModal(){document.getElementById('overlayImport').classList.remove('show');}
+function downloadTemplate(){window.location.href=`${API}/import/template`;}
+function dzDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag-over');}
+function dzDragLeave(){document.getElementById('dropZone').classList.remove('drag-over');}
+function dzDrop(e){e.preventDefault();dzDragLeave();const f=e.dataTransfer.files[0];if(f)handleCsvFile(f);}
+function handleCsvFile(f){if(!f)return;importFile=f;document.getElementById('dropZone').querySelector('p').innerHTML=`📄 <strong>${f.name}</strong>`;document.getElementById('importResults').style.display='none';document.getElementById('btnImport').disabled=false;}
+async function doImport(){if(!importFile)return;const btn=document.getElementById('btnImport');btn.disabled=true;btn.textContent='Importando...';const fd=new FormData();fd.append('file',importFile);try{const res=await fetch(`${API}/import/csv`,{method:'POST',credentials:'include',body:fd});const data=await res.json();const el=document.getElementById('importResults');el.style.display='block';el.innerHTML=`<div class="ok">✅ ${data.criados} importado(s) com sucesso.</div>`+(data.erros.length?`<div class="err">⚠️ ${data.erros.length} erro(s):<br>${data.erros.map(e=>`• ${e}`).join('<br>')}</div>`:'');if(data.criados>0){loadData();toast(`✅ ${data.criados} importados!`);}}catch(e){toast('❌ '+e.message,true);}finally{btn.disabled=false;btn.textContent='Importar';}}
+
+// ── HISTÓRICO ─────────────────────────────────────────────────────────────────
+async function loadHistorico(){
+  const acao=document.getElementById('histFiltroAcao').value,entidade=document.getElementById('histFiltroEnt').value;
+  const params=new URLSearchParams({page:histPage,limit:50});
+  if(acao)params.set('acao',acao);if(entidade)params.set('entidade',entidade);
+  const {data,total}=await api('/historico?'+params);
+  const tbody=document.getElementById('tbodyHist'),empty=document.getElementById('emptyHist');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';}
+  else{
+    empty.style.display='none';
+    tbody.innerHTML=data.map(r=>{
+      const ac='acao-'+(r.acao||'default');
+      let det='';try{const d=typeof r.detalhes==='string'?JSON.parse(r.detalhes):r.detalhes;det=d?Object.entries(d).slice(0,3).map(([k,v])=>`${k}:${JSON.stringify(v)}`).join(' | '):'';}catch(e){}
+      return`<tr><td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDatetime(r.criado_em)}</td><td style="font-size:13px">${r.nome||'—'} <span style="color:var(--muted);font-size:11px">(${r.username||'?'})</span></td><td><span class="acao-badge ${ac}">${r.acao}</span></td><td style="font-size:12px;color:var(--muted)">${r.entidade||'—'}</td><td style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)">${r.entidade_id||'—'}</td><td class="det-cell" title="${det}">${det||'—'}</td></tr>`;
+    }).join('');
+  }
+  const totalPages=Math.ceil(total/50),pg=document.getElementById('paginacaoHist');
+  if(totalPages<=1){pg.innerHTML='';return;}
+  pg.innerHTML=`<button class="pg-btn" onclick="histPage--;loadHistorico()" ${histPage<=1?'disabled':''}>← Anterior</button><span>Página ${histPage} de ${totalPages}</span><button class="pg-btn" onclick="histPage++;loadHistorico()" ${histPage>=totalPages?'disabled':''}>Próxima →</button>`;
+}
+function fmtDatetime(d){if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+
+// ── USUÁRIOS ──────────────────────────────────────────────────────────────────
+async function loadUsuarios(){
+  const users=await api('/usuarios');
+  document.getElementById('usersGrid').innerHTML=users.map(u=>`
+    <div class="user-card">
+      <div class="user-card-top"><div class="user-avatar">${u.role==='admin'?'👑':'👤'}</div><div class="user-info"><div class="name">${u.nome}</div><div class="uname">@${u.username}</div></div></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="role-badge role-${u.role}">${u.role}</span><span style="font-size:11px;color:${u.ativo?'var(--green)':'var(--danger)'}">${u.ativo?'● Ativo':'● Inativo'}</span></div>
+      ${u.role!=='admin'?`<div style="display:flex;flex-wrap:wrap;gap:4px">${((typeof u.permissoes==='string'?JSON.parse(u.permissoes||'[]'):u.permissoes)||[]).map(p=>`<span style="background:rgba(0,153,255,.1);border:1px solid rgba(0,153,255,.2);border-radius:4px;padding:1px 7px;font-size:10px;color:var(--accent2)">${{ver_numeros:'Ver',criar_numero:'Adicionar',editar_numero:'Editar',remover_numero:'Remover',exportar:'Exportar',importar:'Importar',ver_historico:'Histórico',gerenciar_operadoras:'Operadoras'}[p]||p}</span>`).join('')||'<span style="font-size:11px;color:var(--muted)">Sem permissões</span>'}</div>`:'<span style="font-size:11px;color:var(--purple)">✦ Acesso total</span>'}
+      ${u.ultimo_acesso?`<div style="font-size:11px;color:var(--muted);margin-top:8px">Último acesso: ${fmtDatetime(u.ultimo_acesso)}</div>`:''}
+      <div class="user-card-actions"><button class="row-btn" onclick="openUserModal(${u.id})">✏️ Editar</button>${u.id!==currentUser.id?`<button class="row-btn del" onclick="deleteUser(${u.id})">🗑 Remover</button>`:''}</div>
+    </div>`).join('');
+}
+function togglePermsSection() {
+  const role = document.getElementById('uRole').value;
+  document.getElementById('permsSection').style.display = role === 'admin' ? 'none' : 'block';
+}
+function toggleAllPerms(val) {
+  document.querySelectorAll('.perm-cb').forEach(cb => cb.checked = val);
+}
+function getSelectedPerms() {
+  return [...document.querySelectorAll('.perm-cb:checked')].map(cb => cb.value);
+}
+function setSelectedPerms(perms) {
+  document.querySelectorAll('.perm-cb').forEach(cb => cb.checked = (perms||[]).includes(cb.value));
+}
+
+function openUserModal(id=null){
+  editingUserId=id;
+  // Limpa o modal
+  document.getElementById('userModalTitle').textContent=id?'Editar Usuário':'Novo Usuário';
+  document.getElementById('uPassLabel').textContent=id?'Nova Senha (vazio = manter)':'Senha *';
+  document.getElementById('uAtivoGroup').style.display=id?'flex':'none';
+  ['uNome','uUsername','uPassword'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('uRole').value='operador';
+  setSelectedPerms([]);
+  togglePermsSection();
+
+  if(id){
+    // Abre o modal imediatamente e preenche depois
+    document.getElementById('overlayUser').classList.add('show');
+    api('/usuarios').then(users=>{
+      const u=users.find(x=>x.id===id);
+      if(!u){ toast('❌ Usuário não encontrado.',true); return; }
+      document.getElementById('uNome').value=u.nome;
+      document.getElementById('uUsername').value=u.username;
+      document.getElementById('uRole').value=u.role;
+      document.getElementById('uAtivo').value=String(u.ativo);
+      let perms = [];
+      try { perms = u.permissoes ? (typeof u.permissoes==='string'?JSON.parse(u.permissoes):u.permissoes) : []; } catch(e){}
+      setSelectedPerms(perms);
+      togglePermsSection();
+    }).catch(e=>{ toast('❌ Erro ao carregar usuário: '+e.message,true); });
+  } else {
+    document.getElementById('overlayUser').classList.add('show');
+  }
+}
+function closeUserModal(){document.getElementById('overlayUser').classList.remove('show');editingUserId=null;}
+async function saveUser(){
+  const nome=document.getElementById('uNome').value.trim(),username=document.getElementById('uUsername').value.trim(),password=document.getElementById('uPassword').value,role=document.getElementById('uRole').value,ativo=document.getElementById('uAtivo').value;
+  if(!nome||!username){toast('❌ Preencha nome e username.',true);return;}
+  if(!editingUserId&&!password){toast('❌ Informe a senha.',true);return;}
+  const permissoes = role==='admin' ? [] : getSelectedPerms();
+  const btn=document.getElementById('btnUserSave');btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    if(editingUserId){await api('/usuarios/'+editingUserId,{method:'PUT',body:{nome,role,ativo:Number(ativo),password:password||undefined,permissoes}});toast('✅ Usuário atualizado!');}
+    else{await api('/usuarios',{method:'POST',body:{nome,username,password,role,permissoes}});toast('✅ Usuário criado!');}
+    closeUserModal();loadUsuarios();
+  }catch(e){toast('❌ '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Salvar';}
+}
+async function deleteUser(id){if(!confirm('Remover usuário?'))return;await api('/usuarios/'+id,{method:'DELETE'});toast('🗑 Removido.');loadUsuarios();}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){closeModal();closeOpsModal();closeImportModal();closeUserModal();}
+  const ni=document.getElementById('fNumInput');
+  if(document.activeElement===ni&&(e.key==='Enter'||e.key===',')){e.preventDefault();addNumTag();}
+});
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(err?' error':'');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BACKUP & RESTORE
+// ══════════════════════════════════════════════════════════════════════════════
+async function downloadBackup(){
+  const btn=event.target;btn.disabled=true;btn.textContent='Gerando...';
+  const st=document.getElementById('backupStatus');
+  st.textContent='⏳ Gerando backup...';
+  try{
+    const token=localStorage.getItem('telecrm_token')||'';
+    const headers={};if(token)headers['Authorization']='Bearer '+token;
+    const r=await fetch('/api/backup',{credentials:'include',headers});
+    if(!r.ok)throw new Error('Erro ao gerar backup');
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const data=new Date().toISOString().split('T')[0];
+    a.href=url;a.download=`voipflow-backup-${data}.json`;a.click();
+    URL.revokeObjectURL(url);
+    st.textContent='✅ Backup gerado com sucesso!';
+    st.style.color='var(--green)';
+    toast('✅ Backup baixado!');
+  }catch(e){
+    st.textContent='❌ '+e.message;st.style.color='var(--danger)';
+    toast('❌ '+e.message,true);
+  }finally{btn.disabled=false;btn.textContent='⬇️ Baixar Backup';}
+}
+
+async function uploadRestore(input){
+  const file=input.files[0];if(!file)return;
+  if(!confirm('⚠️ ATENÇÃO: Isso irá SUBSTITUIR todos os dados atuais pelo backup. Continuar?'))return;
+  const st=document.getElementById('backupStatus');
+  st.textContent='⏳ Restaurando backup...';st.style.color='var(--warn)';
+  try{
+    const token=localStorage.getItem('telecrm_token')||'';
+    const headers={};if(token)headers['Authorization']='Bearer '+token;
+    const fd=new FormData();fd.append('backup',file);
+    const r=await fetch('/api/restore',{method:'POST',credentials:'include',headers,body:fd});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Erro');
+    st.textContent='✅ Backup restaurado! Recarregando...';st.style.color='var(--green)';
+    toast('✅ Backup restaurado com sucesso!');
+    setTimeout(()=>location.reload(),2000);
+  }catch(e){
+    st.textContent='❌ '+e.message;st.style.color='var(--danger)';
+    toast('❌ '+e.message,true);
+  }
+  input.value='';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PORTABILIDADE
+// ══════════════════════════════════════════════════════════════════════════════
+let portaPage=1, portaDebounce=null, editingPortaId=null, portaNumTags=[];
+
+function portaStatusClass(s){
+  return {
+    'Aberto':'sp-aberto','Em analise':'sp-analise',
+    'Aguardando documentos':'sp-aguardando','Concluido':'sp-concluido','Cancelado':'sp-cancelado'
+  }[s]||'sp-aberto';
+}
+
+async function loadPorta(){
+  const q=document.getElementById('portaSearch').value.trim();
+  const status=document.getElementById('portaFiltroStatus').value;
+  const params=new URLSearchParams({q,status,page:portaPage,limit:50});
+  const {data,total,stats}=await api('/portabilidade?'+params);
+
+  // Stats
+  const sc=document.getElementById('portaStats');
+  sc.innerHTML=Object.entries(stats).map(([s,n])=>
+    `<div class="porta-stat"><span class="status-porta ${portaStatusClass(s)}">${s}</span><strong>${n}</strong></div>`
+  ).join('');
+
+  document.getElementById('portaCount').textContent=`${total} pedido${total!==1?'s':''}`;
+  const tbody=document.getElementById('tbodyPorta'),empty=document.getElementById('emptyPorta');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map(p=>{
+    const sc=portaStatusClass(p.status);
+    const nums=(p.numeros||[]).map(n=>`<span class="num-pill">${n}</span>`).join('');
+    const origem=p.operadora_origem||'—', destino=p.operadora_destino||'—';
+    const canEdit=hasPermission('editar_portabilidade'), canDel=hasPermission('remover_portabilidade');
+    return`<tr>
+      <td class="id-cell">#${p.id}</td>
+      <td class="company-cell">${p.empresa}</td>
+      <td><div style="font-size:13px;font-weight:500">${p.titular||'—'}</div><div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">${p.cnpj_cpf||''}</div></td>
+      <td>${nums||'—'}</td>
+      <td style="font-size:12px"><span class="op-badge">${origem}</span> → <span class="op-badge">${destino}</span></td>
+      <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--warn)">${p.protocolo||'—'}</td>
+      <td><span class="status-porta ${sc}">${p.status}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${p.data_abertura?fmtDate(p.data_abertura):'—'}</td>
+      <td style="font-size:12px;text-align:center">${p.docs_count||0} 📎</td>
+      <td><div class="row-actions">
+        <button class="row-btn" onclick="openPortaModal(${p.id})">🔍</button>
+        <button class="row-btn" title="Gerar Termo" onclick="gerarTermoRapido(${p.id})" style="color:#00e5a0">🖨</button>
+        ${canEdit?`<button class="row-btn" onclick="openPortaModal(${p.id})">✏️</button>`:''}
+        ${canDel?`<button class="row-btn del" onclick="deletePorta(${p.id})">🗑</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const totalPages=Math.ceil(total/50),pg=document.getElementById('paginacaoPorta');
+  if(totalPages<=1){pg.innerHTML='';return;}
+  pg.innerHTML=`<button class="pg-btn" onclick="portaPage--;loadPorta()" ${portaPage<=1?'disabled':''}>← Anterior</button><span>Página ${portaPage} de ${totalPages}</span><button class="pg-btn" onclick="portaPage++;loadPorta()" ${portaPage>=totalPages?'disabled':''}>Próxima →</button>`;
+}
+
+function debouncePorta(){portaPage=1;clearTimeout(portaDebounce);portaDebounce=setTimeout(loadPorta,300);}
+
+// Sugestão de empresa ao digitar
+async function filterPortaEmpresas(){
+  const q=document.getElementById('pEmpresa').value.trim();
+  const sug=document.getElementById('portaEmpresaSugest');
+  if(q.length<2){sug.innerHTML='';return;}
+  const {data}=await api('/numeros?q='+encodeURIComponent(q)+'&limit=8').catch(()=>({data:[]}));
+  if(!data.length){sug.innerHTML='';return;}
+  sug.innerHTML=`<div style="position:absolute;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:100%;top:4px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    ${[...new Map(data.map(r=>[r.empresa,r])).values()].slice(0,6).map(r=>
+      `<div onclick="selectPortaEmpresa('${r.empresa.replace(/'/g,"\'")}',${r.id})"
+        style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+        onmouseenter="this.style.background='rgba(255,255,255,.05)'"
+        onmouseleave="this.style.background=''">${r.empresa}</div>`
+    ).join('')}
+  </div>`;
+}
+
+function selectPortaEmpresa(nome,id){
+  document.getElementById('pEmpresa').value=nome;
+  document.getElementById('portaEmpresaSugest').innerHTML='';
+}
+
+// Tags de números
+function addPortaTag(){
+  const inp=document.getElementById('pNumInput'),val=inp.value.trim();
+  if(!val)return;
+  val.split(/[,;]+/).forEach(part=>{
+    part=part.trim();
+    if(!part)return;
+    parseRange(part).forEach(n=>{if(n&&!portaNumTags.includes(n))portaNumTags.push(n);});
+  });
+  inp.value='';renderPortaTags();
+}
+function removePortaTag(i){portaNumTags.splice(i,1);renderPortaTags();}
+function renderPortaTags(){document.getElementById('portaTagsWrap').innerHTML=portaNumTags.map((n,i)=>`<span class="num-tag">${n} <button onclick="removePortaTag(${i})">×</button></span>`).join('');}
+
+// Abrir modal
+async function openPortaModal(id=null){
+  editingPortaId=id;
+  portaNumTags=[];
+  document.getElementById('portaTagsWrap').innerHTML='';
+  document.getElementById('portaModalTitle').textContent=id?'Editar Pedido de Portabilidade':'Novo Pedido de Portabilidade';
+
+  // Popular operadoras
+  ['pOpOrigem','pOpDestino'].forEach(sel=>{
+    const el=document.getElementById(sel), cur=el.value;
+    el.innerHTML='<option value="">— Selecione —</option>'+operadoras.map(o=>`<option value="${o}">${o}</option>`).join('');
+    if(cur)el.value=cur;
+  });
+
+  // Limpar
+  ['pEmpresa','pDoc','pTitular','pProtocolo','pObs','pDataAbertura','pDataPrevisao','pDataConclusao'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('pStatus').value='Aberto';
+  document.getElementById('pOpOrigem').value='';
+  document.getElementById('pOpDestino').value='';
+  document.getElementById('portaDocsSection').style.display='none';
+  document.getElementById('docsList').innerHTML='';
+  document.getElementById('portaEmpresaSugest').innerHTML='';
+  document.getElementById('pDataAbertura').value=new Date().toISOString().split('T')[0];
+
+  document.getElementById('overlayPorta').classList.add('show');
+  document.getElementById('btnGerarTermo').style.display = id ? 'inline-flex' : 'none';
+
+  if(id){
+    const p=await api('/portabilidade/'+id);
+    document.getElementById('pEmpresa').value=p.empresa;
+    document.getElementById('pDoc').value=p.cnpj_cpf||'';
+    document.getElementById('pTitular').value=p.titular||'';
+    document.getElementById('pProtocolo').value=p.protocolo||'';
+    document.getElementById('pObs').value=p.obs||'';
+    document.getElementById('pStatus').value=p.status;
+    document.getElementById('pStatus').dataset.statusAnterior=p.status;
+    document.getElementById('pOpOrigem').value=p.operadora_origem||'';
+    document.getElementById('pOpDestino').value=p.operadora_destino||'';
+    document.getElementById('pDataAbertura').value=p.data_abertura?p.data_abertura.split('T')[0]:'';
+    document.getElementById('pDataPrevisao').value=p.data_previsao?p.data_previsao.split('T')[0]:'';
+    document.getElementById('pDataConclusao').value=p.data_conclusao?p.data_conclusao.split('T')[0]:'';
+    portaNumTags=[...(p.numeros||[])];
+    renderPortaTags();
+    renderDocsList(p.docs||[]);
+    document.getElementById('portaDocsSection').style.display='block';
+  }
+}
+
+function closePortaModal(){document.getElementById('overlayPorta').classList.remove('show');editingPortaId=null;}
+
+async function savePorta(){
+  const empresa=document.getElementById('pEmpresa').value.trim();
+  if(!empresa){toast('❌ Informe o nome da empresa.',true);return null;}
+  const pending=document.getElementById('pNumInput').value.trim();
+  if(pending){document.getElementById('pNumInput').value=pending;addPortaTag();}
+  const payload={
+    empresa, cnpj_cpf:document.getElementById('pDoc').value.trim(),
+    titular:document.getElementById('pTitular').value.trim(),
+    numeros:portaNumTags, operadora_origem:document.getElementById('pOpOrigem').value,
+    operadora_destino:document.getElementById('pOpDestino').value,
+    protocolo:document.getElementById('pProtocolo').value.trim(),
+    status:document.getElementById('pStatus').value||'Aberto',
+    data_abertura:document.getElementById('pDataAbertura').value||null,
+    data_previsao:document.getElementById('pDataPrevisao').value||null,
+    data_conclusao:document.getElementById('pDataConclusao').value||null,
+    obs:document.getElementById('pObs').value.trim()
+  };
+  const btn=document.getElementById('btnPortaSave');btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    let pedido;
+    if(editingPortaId){
+      const statusAnterior = document.getElementById('pStatus').dataset.statusAnterior||'';
+      pedido=await api('/portabilidade/'+editingPortaId,{method:'PUT',body:payload});
+      if(payload.status==='Concluido' && statusAnterior !== 'Concluido'){
+        toast('🎉 Portabilidade concluída! Números copiados para a aba Números automaticamente.');
+      } else {
+        toast('✅ Pedido atualizado!');
+      }
+    } else {
+      pedido=await api('/portabilidade',{method:'POST',body:payload});
+      document.getElementById('pProtocolo').value=pedido.protocolo||'';
+      editingPortaId=pedido.id;
+      document.getElementById('pStatus').dataset.statusAnterior=pedido.status;
+      document.getElementById('portaModalTitle').textContent='Editar Pedido de Portabilidade';
+      toast('✅ Pedido criado! Protocolo: '+pedido.protocolo);
+    }
+    loadPorta();
+    return editingPortaId;
+  }catch(e){toast('❌ '+e.message,true);return null;}
+  finally{btn.disabled=false;btn.textContent='Salvar Pedido';}
+}
+
+async function deletePorta(id){
+  if(!confirm('Remover este pedido e todos os documentos?'))return;
+  await api('/portabilidade/'+id,{method:'DELETE'});
+  toast('🗑 Pedido removido.');loadPorta();
+}
+
+// ── DOCUMENTOS ────────────────────────────────────────────────────────────────
+function formatBytes(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
+
+function renderDocsList(docs){
+  const el=document.getElementById('docsList');
+  if(!docs.length){el.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0">Nenhum documento anexado ainda.</p>';return;}
+  const token=localStorage.getItem('telecrm_token')||'';
+  el.innerHTML=docs.map(d=>{
+    const icon={'CPF':'🪪','CNH':'🚗','Contrato Social':'📄','Conta de Telefone':'📱','Outro':'📎'}[d.categoria]||'📎';
+    const isImg=d.mime_type&&d.mime_type.startsWith('image/');
+    const isPdf=d.mime_type==='application/pdf';
+    const url=`/api/portabilidade/${d.pedido_id}/docs/${d.id}/download`;
+    return`<div class="doc-item">
+      <div class="doc-icon">${icon}</div>
+      <div class="doc-info">
+        <div class="doc-name">${d.nome_original} <span style="font-size:10px;background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:1px 6px;margin-left:4px">v${d.versao||'1.0'}</span></div>
+        <div class="doc-meta"><span class="doc-cat">${d.categoria}</span> • ${d.tamanho?formatBytes(d.tamanho):''} • ${fmtDatetime(d.enviado_em)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <a href="${url}" target="_blank" class="row-btn" style="text-decoration:none;padding:4px 10px">${isImg?'🖼️ Ver':isPdf?'📄 Ver':'⬇️ Baixar'}</a>
+        <button class="row-btn del" onclick="removeDoc(${d.id},${d.pedido_id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function uploadDocs(files){
+  // Se pedido não foi salvo ainda, salva automaticamente
+  if(!editingPortaId){
+    toast('💾 Salvando pedido antes de anexar...');
+    const savedId = await savePorta();
+    if(!savedId){toast('❌ Salve o pedido primeiro.',true);return;}
+  }
+  const cat=document.getElementById('docCategoria').value;
+  for(const file of files){
+    const fd=new FormData();fd.append('arquivo',file);fd.append('categoria',cat);
+    try{
+      const _tok = localStorage.getItem('telecrm_token');
+      if (_tok) fd.append('_auth_token', _tok); // fallback
+      const _headers = {};
+      if (_tok) _headers['Authorization'] = 'Bearer ' + _tok;
+      const r=await fetch(`/api/portabilidade/${editingPortaId}/docs`,{method:'POST',credentials:'include',headers:_headers,body:fd});
+      const text=await r.text();
+      let data;
+      try{ data=JSON.parse(text); }catch(e){ toast('❌ Erro no servidor ao enviar '+file.name+' (resposta inválida)',true); continue; }
+      if(!data.ok)throw new Error(data.error||'Erro desconhecido');
+    }catch(e){toast('❌ Erro ao enviar '+file.name+': '+e.message,true);}
+  }
+  // Recarrega docs
+  const p=await api('/portabilidade/'+editingPortaId);
+  renderDocsList(p.docs||[]);
+  toast('✅ Documento(s) anexado(s)!');
+}
+
+async function removeDoc(docId,pedidoId){
+  if(!confirm('Remover este documento?'))return;
+  const pid=pedidoId||editingPortaId;
+  await api(`/portabilidade/${pid}/docs/${docId}`,{method:'DELETE'});
+  const p=await api('/portabilidade/'+pid);
+  renderDocsList(p.docs||[]);
+  toast('🗑 Documento removido.');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+// ── TERMO DE PORTABILIDADE ────────────────────────────────────────────────────
+
+async function gerarTermoRapido(id) {
+  try {
+    const p = await api('/portabilidade/' + id);
+    const empresa = p.empresa || '___________________________';
+    const doc     = p.cnpj_cpf || '___________________________';
+    const numeros = p.numeros || [];
+    const tipoDoc = doc.includes('/') || doc.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF';
+
+    const numHtml = numeros.length
+      ? numeros.map(n => `<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center;margin:4px 0">${n}</div>`).join('')
+      : '<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center">___________________________</div>';
+
+    const u = v => `<span style="border-bottom:1px solid #111;display:inline-block;min-width:10px;padding:0 4px;font-weight:bold">${v}</span>`;
+
+    document.getElementById('termoConteudo').innerHTML = `
+      <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:30px;text-transform:uppercase;letter-spacing:1px">
+        Solicitação de Portabilidade Numérica
+      </div>
+      <p style="margin-bottom:14px">À<br>A/C: Departamento Portabilidade Numérica</p>
+      <p style="margin-bottom:14px;text-align:justify">
+        Eu, ${u(empresa)}, inscrita no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do(s) Telefone(s) fixo(s):
+      </p>
+      <div style="margin:10px 0 20px">${numHtml}</div>
+      <p style="margin-bottom:14px;text-align:justify">
+        a entrar em contato com a operadora atual para efetivar a transferência do(s) meu(s) número(s) de telefone.
+      </p>
+      <p style="margin-bottom:14px;text-align:justify">
+        Informamos ainda, que temos preferência para realizar a portabilidade na seguinte janela de horário:
+      </p>
+      <p style="margin-bottom:10px"><strong>Dias úteis, de Segunda a Sexta-feira:</strong></p>
+      <div style="margin:0 0 20px 20px;line-height:2">
+        <div>( &nbsp; ) das 08:00 às 10:00</div>
+        <div>( &nbsp; ) das 10:00 às 12:00</div>
+        <div>( &nbsp; ) das 12:00 às 14:00</div>
+        <div>( &nbsp; ) das 14:00 às 16:00</div>
+        <div>( &nbsp; ) das 16:00 às 18:00</div>
+      </div>
+      <div style="margin:30px 0 40px">
+        Duque de Caxias, RJ, _______ de __________________ de _________.
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:50px;gap:40px">
+        <div style="flex:1;text-align:center">
+          <div style="border-bottom:1px solid #111;height:36px;margin-bottom:6px"></div>
+          <div style="font-size:12px">Nome</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <div style="border-bottom:1px solid #111;height:36px;margin-bottom:6px"></div>
+          <div style="font-size:12px">CPF</div>
+        </div>
+      </div>`;
+
+    document.getElementById('overlayTermo').style.display = 'flex';
+    document.getElementById('overlayTermo').classList.add('show');
+  } catch(e) { toast('❌ Erro ao gerar termo: ' + e.message, true); }
+}
+
+function gerarTermoPortabilidade() {
+  const empresa  = document.getElementById('pEmpresa').value.trim()  || '___________________________';
+  const doc      = document.getElementById('pDoc').value.trim()       || '___________________________';
+  const numeros  = [...portaNumTags];
+
+  const tipoDoc  = doc.includes('/') || doc.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF';
+
+  const numHtml  = numeros.length
+    ? numeros.map(n => `<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center;margin:4px 0">${n}</div>`).join('')
+    : '<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center">___________________________</div>';
+
+  const u = v => `<span style="border-bottom:1px solid #111;display:inline-block;min-width:10px;padding:0 4px;font-weight:bold">${v}</span>`;
+
+  document.getElementById('termoConteudo').innerHTML = `
+    <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:30px;text-transform:uppercase;letter-spacing:1px">
+      Solicitação de Portabilidade Numérica
+    </div>
+    <p style="margin-bottom:14px">À<br>A/C: Departamento Portabilidade Numérica</p>
+    <p style="margin-bottom:14px;text-align:justify">
+      Eu, ${u(empresa)}, inscrita no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do(s) Telefone(s) fixo(s):
+    </p>
+    <div style="margin:10px 0 20px">${numHtml}</div>
+    <p style="margin-bottom:14px;text-align:justify">
+      a entrar em contato com a operadora atual para efetivar a transferência do(s) meu(s) número(s) de telefone.
+    </p>
+    <p style="margin-bottom:14px;text-align:justify">
+      Informamos ainda, que temos preferência para realizar a portabilidade na seguinte janela de horário:
+    </p>
+    <p style="margin-bottom:10px"><strong>Dias úteis, de Segunda a Sexta-feira:</strong></p>
+    <div style="margin:0 0 20px 20px;line-height:2">
+      <div>( &nbsp; ) das 08:00 às 10:00</div>
+      <div>( &nbsp; ) das 10:00 às 12:00</div>
+      <div>( &nbsp; ) das 12:00 às 14:00</div>
+      <div>( &nbsp; ) das 14:00 às 16:00</div>
+      <div>( &nbsp; ) das 16:00 às 18:00</div>
+    </div>
+    <div style="margin:30px 0 40px">
+      Duque de Caxias, RJ, _______ de __________________ de _________.
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:50px;gap:40px">
+      <div style="flex:1;text-align:center">
+        <div style="border-bottom:1px solid #111;height:36px;margin-bottom:6px"></div>
+        <div style="font-size:12px">Nome</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="border-bottom:1px solid #111;height:36px;margin-bottom:6px"></div>
+        <div style="font-size:12px">CPF</div>
+      </div>
+    </div>`;
+
+  document.getElementById('overlayTermo').style.display = 'flex';
+  document.getElementById('overlayTermo').classList.add('show');
+}
+
+function closeTermoModal() {
+  const o = document.getElementById('overlayTermo');
+  o.classList.remove('show');
+  o.style.display = 'none';
+}
+
+function imprimirTermo() {
+  const conteudo = document.getElementById('termoConteudo').innerHTML;
+  const win = window.open('', '_blank', 'width=800,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Termo de Portabilidade</title>
+    <style>
+      body{font-family:'Times New Roman',Times,serif;font-size:14px;line-height:1.7;color:#111;padding:50px 60px;margin:0}
+      @media print{
+        @page { margin: 15mm 20mm; size: A4; }
+        body { padding: 0; margin: 0; }
+      }
+    </style></head><body>${conteudo}
+    <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();}}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+checkSession();
+</script>
+</body>
+</html>
