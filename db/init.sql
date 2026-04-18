@@ -63,19 +63,24 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 INSERT IGNORE INTO configuracoes (chave, valor) VALUES
   ('app_nome',      'TeleCRM'),
   ('app_subtitulo', 'Gestão de Números de Telefonia'),
-  ('app_logo',      '');
+  ('app_logo',      ''),
+  ('api_consulta_operadora_url', ''),
+  ('api_consulta_operadora_login', 'admin'),
+  ('api_consulta_operadora_senha', '123');
 
 -- Dados de exemplo
 INSERT IGNORE INTO numeros (id, empresa, operadora, servidor, status, data_ativacao) VALUES
-  (1,'BARATAO','AMERICANET','179.127.199.50','Ativo','2026-02-24'),
-  (2,'IGREJA PRESBITERIANA MONTE HOREBE DA FIQUEIRA','AMERICANET','179.127.199.178','Ativo','2026-02-09'),
-  (3,'RESERVADO CONECTA GUAPI','IDT','179.127.199.178','Ativo','2026-01-23'),
-  (4,'RESERVADO CONECTA GUAPI','IDT','179.127.199.178','Ativo','2026-01-23'),
-  (5,'LEON FARES CONECTA GUAPI','IDT','179.127.199.106','Ativo','2026-01-23'),
-  (6,'AUTO ESCOLA MANTIQUIRA','IDT','10.5.22.18','Inativo','2026-01-22');
+  (1,'TECNOLOGIA SOLUTIONS LTDA','VIVO','192.168.1.10','Ativo','2026-03-15'),
+  (2,'CLÍNICA SAÚDE INTEGRADA','TIM','192.168.1.25','Ativo','2026-03-10'),
+  (3,'ESCRITÓRIO CONTÁBIL MARCOS SILVA','CLARO','192.168.1.40','Ativo','2026-03-05'),
+  (4,'ACADEMIA FORÇA E SAÚDE','OI','192.168.1.55','Ativo','2026-02-28'),
+  (5,'RESTAURANTE SABOR CASEIRO','VIVO','192.168.1.70','Ativo','2026-02-20'),
+  (6,'ESCOLA MUNICIPAL PEDAGOGICA','TIM','192.168.1.85','Inativo','2026-02-15'),
+  (7,'PET SHOP AMIGO FIEL','CLARO','192.168.1.100','Pendente','2026-04-01'),
+  (8,'LOJA DE ROUPAS ESTILO','OI','192.168.1.115','Ativo','2026-04-05');
 
 INSERT IGNORE INTO numero_telefones (numero_id, telefone) VALUES
-  (1,'35221560'),(2,'27761918'),(3,'38784819'),(4,'38784818'),(5,'38784816'),(6,'38784829');
+  (1,'1133334444'),(2,'1133335555'),(3,'1133336666'),(4,'1133337777'),(5,'1133338888'),(6,'1133339999'),(7,'1133330000'),(8,'1133331111');
 
 -- ── PORTABILIDADE ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS portabilidade (
@@ -114,3 +119,9 @@ CREATE TABLE IF NOT EXISTS portabilidade_docs (
   enviado_em      DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_pedido (pedido_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dados de exemplo de portabilidade
+INSERT IGNORE INTO portabilidade (id, empresa, cnpj_cpf, numeros, operadora_origem, operadora_destino, protocolo, status, data_abertura, data_previsao) VALUES
+  (1,'COMÉRCIO VAREJISTA LTDA','12.345.678/0001-90','["11988887777","11988887778"]','OI','VIVO','PORT-2026-0001','Aberto','2026-04-10','2026-04-17'),
+  (2,'INDÚSTRIA METALÚRGICA ABC','98.765.432/0001-10','["11999990000"]','TIM','CLARO','PORT-2026-0002','Em análise','2026-04-08','2026-04-15'),
+  (3,'SERVIÇOS DE CONSULTORIA XYZ','11.222.333/0001-44','["11977776666"]','VIVO','TIM','PORT-2026-0003','Concluído','2026-03-20','2026-03-27');

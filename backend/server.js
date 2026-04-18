@@ -11,6 +11,31 @@ const { parse }      = require('csv-parse/sync');
 const { stringify }  = require('csv-stringify/sync');
 const fs             = require('fs');
 const path           = require('path');
+const zlib           = require('zlib');
+
+// Cache de estatísticas ( TTL 30 segundos )
+let statsCache = { data: null, timestamp: 0 };
+const STATS_TTL = 30 * 1000;
+
+// Criar índice automaticamente ao iniciar
+(async () => {
+  try {
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_numeros_data_ativacao ON numeros(data_ativacao)');
+    console.log('✅ Índice data_ativacao criado');
+  } catch(e) { console.log('ℹ️ Índice pode já existir:', e.message); }
+})();
+
+const getStats = async () => {
+  const now = Date.now();
+  if (statsCache.data && (now - statsCache.timestamp) < STATS_TTL) {
+    return statsCache.data;
+  }
+  const [[stats]] = await pool.query(`SELECT COUNT(*) AS total,SUM(status='Ativo') AS ativos,SUM(status='Inativo') AS inativos,SUM(status='Pendente') AS pendentes FROM numeros`);
+  statsCache = { data: stats, timestamp: now };
+  return stats;
+};
+
+const clearStatsCache = () => { statsCache = { data: null, timestamp: 0 }; };
 
 const app = express();
 
@@ -44,7 +69,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, 'logo' + path.extname(file.originalname))
 });
 const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } });
-const uploadMem = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const uploadMem = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Docs salvos no banco — multer em memória
 const uploadDoc = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -144,11 +169,13 @@ async function dispararWebhook(payload) {
   } catch(e) { console.warn('⚠️  Webhook falhou:', e.message); }
 }
 
-async function logAction(userId, acao, entidade, entidadeId, detalhes = null) {
+async function logAction(userId, acao, entidade, entidadeId, detalhes = null, req = null) {
+  const ip = req ? (req.ip || req.connection.remoteAddress || 'unknown') : null;
+  const detalhesComIp = ip ? { ...detalhes, ip } : detalhes;
   try {
     await pool.query(
       'INSERT INTO historico (usuario_id, acao, entidade, entidade_id, detalhes) VALUES (?,?,?,?,?)',
-      [userId, acao, entidade, entidadeId, detalhes ? JSON.stringify(detalhes) : null]
+      [userId, acao, entidade, entidadeId, detalhesComIp ? JSON.stringify(detalhesComIp) : null]
     );
   } catch(e) { console.error('Log error:', e.message); }
 
@@ -194,17 +221,16 @@ app.get('/api/config', async (req, res) => {
 
 app.put('/api/config', requireAuth, async (req, res) => {
   if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
-  const { app_nome, app_subtitulo } = req.body;
-  const updates = { app_nome, app_subtitulo };
-  for (const [k, v] of Object.entries(updates)) {
-    if (v !== undefined) {
+  const allowedKeys = ['app_nome', 'app_subtitulo', 'api_consulta_operadora_url', 'api_consulta_operadora_login', 'api_consulta_operadora_senha'];
+  for (const [k, v] of Object.entries(req.body)) {
+    if (allowedKeys.includes(k)) {
       await pool.query(
         'INSERT INTO configuracoes (chave, valor) VALUES (?,?) ON DUPLICATE KEY UPDATE valor=?',
-        [k, v, v]
+        [k, v || '', v || '']
       );
     }
   }
-  await logAction((req.user||{}).userId || req.session.userId, 'CONFIG', 'sistema', null, { app_nome, app_subtitulo });
+  await logAction((req.user||{}).userId || req.session.userId, 'CONFIG', 'sistema', null, req.body);
   res.json({ ok: true });
 });
 
@@ -282,7 +308,23 @@ app.delete('/api/config/logo', requireAuth, async (req, res) => {
 // AUTH
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Rate limiting simple
+const loginAttempts = {};
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 min
+const RATE_LIMIT_MAX = 5;
+
+const checkRateLimit = (ip) => {
+  const now = Date.now();
+  if (!loginAttempts[ip]) loginAttempts[ip] = { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+  if (now > loginAttempts[ip].resetAt) { loginAttempts[ip] = { count: 0, resetAt: now + RATE_LIMIT_WINDOW }; }
+  loginAttempts[ip].count++;
+  return loginAttempts[ip].count > RATE_LIMIT_MAX;
+};
+
 app.post('/api/auth/login', async (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  if (checkRateLimit(ip)) return res.status(429).json({ error: 'Muitas tentativas. Tente novamente em 15 minutos.' });
+  
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Preencha todos os campos' });
   try {
@@ -419,6 +461,36 @@ app.delete('/api/operadoras/:nome', requirePermissao('gerenciar_operadoras'), as
   res.json({ ok: true });
 });
 
+// Consultar operador por número
+app.get('/api/consulta-operadora', requireAuth, async (req, res) => {
+  const { numero } = req.query;
+  if (!numero) return res.status(400).json({ error: 'Número é obrigatório' });
+  
+  try {
+    // Busca config da API
+    const [[config]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'api_consulta_operadora_url'");
+    const apiUrl = config?.valor || '';
+    
+    if (!apiUrl || apiUrl.trim() === '') {
+      return res.status(503).json({ error: 'API de consulta não configurada. Configure em Configurações.' });
+    }
+    
+    const [[loginCfg]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'api_consulta_operadora_login'");
+    const [[senhaCfg]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'api_consulta_operadora_senha'");
+    
+    const login = loginCfg?.valor || 'admin';
+    const senha = senhaCfg?.valor || '123';
+    
+    console.log('Consultando operadora:', numero, 'URL:', apiUrl);
+    
+    const response = await fetch(`${apiUrl}?numero=${encodeURIComponent(numero)}&login=${encodeURIComponent(login)}&senha=${encodeURIComponent(senha)}`);
+    const data = await response.json();
+    res.json(data);
+  } catch(e) {
+    res.status(500).json({ error: 'Erro ao consultar operadora: ' + e.message });
+  }
+});
+
 // ══════════════════════════════════════════════════════════════════════════════
 // NÚMEROS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -431,12 +503,35 @@ async function getRecord(id) {
   return row;
 }
 
+// Dashboard stats
+app.get('/api/dashboard', requirePermissao('ver_numeros'), async (req, res) => {
+  try {
+    const [[stats]] = await pool.query(`SELECT COUNT(*) AS total,SUM(status='Ativo') AS ativos,SUM(status='Inativo') AS inativos,SUM(status='Pendente') AS pendentes FROM numeros`);
+    
+    const [porOperadora] = await pool.query(`SELECT operadora, COUNT(*) as total FROM numeros WHERE operadora IS NOT NULL AND operadora != '' GROUP BY operadora ORDER BY total DESC`);
+    
+    const [porServidor] = await pool.query(`SELECT servidor, COUNT(*) as total FROM numeros WHERE servidor IS NOT NULL AND servidor != '' GROUP BY servidor ORDER BY total DESC LIMIT 10`);
+    
+    const [[esteMes]] = await pool.query(`SELECT COUNT(*) as total FROM numeros WHERE MONTH(criado_em) = MONTH(CURDATE()) AND YEAR(criado_em) = YEAR(CURDATE())`);
+    
+    const [[ultimos30]] = await pool.query(`SELECT COUNT(*) as total FROM numeros WHERE criado_em >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`);
+    
+    const [recentes] = await pool.query(`SELECT id, empresa, status, criado_em FROM numeros ORDER BY criado_em DESC LIMIT 5`);
+    
+    const [[portaStats]] = await pool.query(`SELECT COUNT(*) as total, SUM(status='Pendente') as pendente, SUM(status='Concluido') as concluido, SUM(status='Cancelado') as cancelado FROM portabilidade`);
+    
+    res.json({ stats, porOperadora, porServidor, esteMes: esteMes.total, ultimos30: ultimos30.total, recentes, portaStats });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/numeros', requirePermissao('ver_numeros'), async (req, res) => {
-  const { q = '', status, page = 1, limit = 50 } = req.query;
+  const { q = '', status, page = 1, limit = 50, from, to } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   let where = 'WHERE 1=1';
   const params = [];
   if (status && status !== 'todos') { where += ' AND n.status = ?'; params.push(status); }
+  if (from) { where += ' AND n.data_ativacao >= ?'; params.push(from); }
+  if (to) { where += ' AND n.data_ativacao <= ?'; params.push(to); }
   if (q) {
     where += ` AND (n.empresa LIKE ? OR n.servidor LIKE ? OR n.operadora LIKE ? OR
       EXISTS (SELECT 1 FROM numero_telefones nt WHERE nt.numero_id = n.id AND nt.telefone LIKE ?))`;
@@ -444,8 +539,11 @@ app.get('/api/numeros', requirePermissao('ver_numeros'), async (req, res) => {
     params.push(like, like, like, like);
   }
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM numeros n ${where}`, params);
+  const sort = req.query.sort || 'id';
+  const dir = req.query.dir === 'desc' ? 'DESC' : 'ASC';
+  const safeSort = ['id','empresa','operadora','servidor','status','data_ativacao','criado_em'].includes(sort) ? sort : 'id';
   const [rows] = await pool.query(
-    `SELECT n.* FROM numeros n ${where} ORDER BY n.id DESC LIMIT ? OFFSET ?`,
+    `SELECT n.* FROM numeros n ${where} ORDER BY n.${safeSort} ${dir} LIMIT ? OFFSET ?`,
     [...params, Number(limit), offset]
   );
   if (rows.length) {
@@ -455,7 +553,7 @@ app.get('/api/numeros', requirePermissao('ver_numeros'), async (req, res) => {
     tels.forEach(t => { if (!telMap[t.numero_id]) telMap[t.numero_id] = []; telMap[t.numero_id].push(t.telefone); });
     rows.forEach(r => { r.numeros = telMap[r.id] || []; });
   }
-  const [[stats]] = await pool.query(`SELECT COUNT(*) AS total,SUM(status='Ativo') AS ativos,SUM(status='Inativo') AS inativos,SUM(status='Pendente') AS pendentes FROM numeros`);
+  const stats = await getStats();
   res.json({ data: rows, total: Number(total), stats });
 });
 
@@ -479,6 +577,7 @@ app.post('/api/numeros', requirePermissao('criar_numero'), async (req, res) => {
     if (numeros.length) await conn.query('INSERT INTO numero_telefones (numero_id, telefone) VALUES ?', [numeros.map(n=>[id,n])]);
     await conn.commit();
     const rec = await getRecord(id);
+    clearStatsCache();
     await logAction((req.user||{}).userId || req.session.userId, 'CRIAR', 'numero', id, { empresa, status, operadora, servidor, numeros, contrato: contrato||null, obs: obs||null });
     res.json(rec);
   } catch(e) { await conn.rollback(); throw e; } finally { conn.release(); }
@@ -499,6 +598,7 @@ app.put('/api/numeros/:id', requirePermissao('editar_numero'), async (req, res) 
     if (numeros.length) await conn.query('INSERT INTO numero_telefones (numero_id, telefone) VALUES ?', [numeros.map(n=>[id,n])]);
     await conn.commit();
     const rec = await getRecord(id);
+    clearStatsCache();
     await logAction((req.user||{}).userId || req.session.userId, 'EDITAR', 'numero', id, { antes: { empresa: antes?.empresa, status: antes?.status, numeros: antes?.numeros, contrato: antes?.contrato, obs: antes?.obs }, depois: { empresa, status, numeros, servidor, contrato: contrato||null, obs: obs||null } });
     res.json(rec);
   } catch(e) { await conn.rollback(); throw e; } finally { conn.release(); }
@@ -507,6 +607,7 @@ app.put('/api/numeros/:id', requirePermissao('editar_numero'), async (req, res) 
 app.delete('/api/numeros/:id', requirePermissao('remover_numero'), async (req, res) => {
   const rec = await getRecord(req.params.id);
   await pool.query('DELETE FROM numeros WHERE id = ?', [req.params.id]);
+  clearStatsCache();
   await logAction((req.user||{}).userId || req.session.userId, 'REMOVER', 'numero', req.params.id, {
     empresa: rec?.empresa, numeros: rec?.numeros, servidor: rec?.servidor,
     operadora: rec?.operadora, status: rec?.status
@@ -523,6 +624,7 @@ app.delete('/api/numeros', requirePermissao('remover_numero'), async (req, res) 
     id: r.id, empresa: r.empresa, numeros: r.numeros, servidor: r.servidor, operadora: r.operadora, status: r.status
   }));
   await pool.query('DELETE FROM numeros WHERE id IN (?)', [ids]);
+  clearStatsCache();
   await logAction((req.user||{}).userId || req.session.userId, 'REMOVER_LOTE', 'numero', null, { qtd: ids.length, registros: removidos });
   res.json({ ok: true, deleted: ids.length });
 });
@@ -546,6 +648,22 @@ app.get('/api/historico', requirePermissao('ver_historico'), async (req, res) =>
     [...params, Number(limit), offset]
   );
   res.json({ data: rows, total: Number(total) });
+});
+
+// Histórico específico de um registro (audit)
+app.get('/api/historico/:entidade/:id', requirePermissao('ver_historico'), async (req, res) => {
+  const { entidade, id } = req.params;
+  const { limit = 20 } = req.query;
+  try {
+    const [rows] = await pool.query(
+      `SELECT h.acao, h.detalhes, h.criado_em, u.nome AS usuario_nome, u.username 
+       FROM historico h LEFT JOIN usuarios u ON u.id = h.usuario_id
+       WHERE h.entidade = ? AND h.entidade_id = ?
+       ORDER BY h.criado_em DESC LIMIT ?`,
+      [entidade, id, Number(limit)]
+    );
+    res.json({ data: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -631,6 +749,51 @@ app.get('/api/export/csv', requirePermissao('exportar'), async (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="telecrm_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
   await logAction((req.user||{}).userId || req.session.userId, 'EXPORTAR_CSV', 'sistema', null, { total: rows.length });
+});
+
+// Exportar portabilidade CSV
+app.get('/api/export/porta/csv', requirePermissao('exportar'), async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM portabilidade ORDER BY id');
+  const csvData = rows.map(r => ({
+    id: r.id, empresa: r.empresa, cnpj_cpf: r.cnpj_cpf||'', titular: r.titular||'',
+    numeros: r.numeros||'', operadora_origem: r.operadora_origem||'',
+    operadora_destino: r.operadora_destino||'', protocolo: r.protocolo||'',
+    status: r.status, data_abertura: r.data_abertura ? new Date(r.data_abertura).toLocaleDateString('pt-BR') : '',
+    data_previsao: r.data_previsao ? new Date(r.data_previsao).toLocaleDateString('pt-BR') : '',
+    data_conclusao: r.data_conclusao ? new Date(r.data_conclusao).toLocaleDateString('pt-BR') : '',
+    obs: r.obs||''
+  }));
+  const csv = stringify(csvData, { header: true, delimiter: ';' });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="portabilidade_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+  await logAction((req.user||{}).userId || req.session.userId, 'EXPORTAR_PORTA_CSV', 'sistema', null, { total: rows.length });
+});
+
+// Exportar portabilidade Excel
+app.get('/api/export/porta/excel', requirePermissao('exportar'), async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM portabilidade ORDER BY id');
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Portabilidade');
+  ws.columns = [
+    { header: 'ID', key: 'id' }, { header: 'Empresa', key: 'empresa' },
+    { header: 'CNPJ/CPF', key: 'cnpj_cpf' }, { header: 'Titular', key: 'titular' },
+    { header: 'Números', key: 'numeros' }, { header: 'Operadora Origem', key: 'operadora_origem' },
+    { header: 'Operadora Destino', key: 'operadora_destino' }, { header: 'Protocolo', key: 'protocolo' },
+    { header: 'Status', key: 'status' }, { header: 'Data Abertura', key: 'data_abertura' },
+    { header: 'Data Previsão', key: 'data_previsao' }, { header: 'Data Conclusão', key: 'data_conclusao' },
+    { header: 'Observações', key: 'obs' }
+  ];
+  rows.forEach(r => ws.addRow({
+    ...r, data_abertura: r.data_abertura ? new Date(r.data_abertura) : null,
+    data_previsao: r.data_previsao ? new Date(r.data_previsao) : null,
+    data_conclusao: r.data_conclusao ? new Date(r.data_conclusao) : null
+  }));
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="portabilidade_${new Date().toISOString().split('T')[0]}.xlsx"`);
+  await wb.xlsx.write(res);
+  res.end();
+  await logAction((req.user||{}).userId || req.session.userId, 'EXPORTAR_PORTA_EXCEL', 'sistema', null, { total: rows.length });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -887,7 +1050,7 @@ app.delete('/api/portabilidade/:id/docs/:docId', requirePermissao('editar_portab
 // BACKUP & RESTORE
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Gerar backup completo (JSON)
+// Gerar backup completo (JSON + gzip)
 app.get('/api/backup', requireAuth, async (req, res) => {
   if (req.session.role !== 'admin' && (req.user||{}).role !== 'admin')
     return res.status(403).json({ error: 'Apenas admin' });
@@ -901,7 +1064,6 @@ app.get('/api/backup', requireAuth, async (req, res) => {
     const [portaDocs] = await pool.query('SELECT id,pedido_id,categoria,versao,nome_original,mime_type,tamanho,conteudo,enviado_por,enviado_em FROM portabilidade_docs');
     const [historico] = await pool.query('SELECT * FROM historico ORDER BY id DESC LIMIT 5000');
 
-    // Converter BLOB para base64
     portaDocs.forEach(d => { if (d.conteudo) d.conteudo = d.conteudo.toString('base64'); });
 
     const backup = {
@@ -911,19 +1073,32 @@ app.get('/api/backup', requireAuth, async (req, res) => {
       dados: { numeros, telefones, operadoras, usuarios, config, portabilidade: porta, portabilidade_docs: portaDocs, historico }
     };
 
-    res.set('Content-Type', 'application/json');
-    res.set('Content-Disposition', `attachment; filename="voipflow-backup-${new Date().toISOString().split('T')[0]}.json"`);
-    res.json(backup);
+    const jsonStr = JSON.stringify(backup);
+    const gzipped = zlib.gzipSync(Buffer.from(jsonStr));
+    
+    res.set('Content-Type', 'application/gzip');
+    res.set('Content-Disposition', `attachment; filename="voipflow-backup-${new Date().toISOString().split('T')[0]}.json.gz"`);
+    res.send(gzipped);
     await logAction((req.user||{}).userId||req.session.userId, 'BACKUP', 'sistema', null, { tabelas: Object.keys(backup.dados) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // Restaurar backup
 app.post('/api/restore', requireAuth, uploadMem.single('backup'), async (req, res) => {
-  if (req.session.role !== 'admin' && (req.user||{}).role !== 'admin')
+  console.log('Restore request, user:', req.user?.username, 'role:', req.user?.role);
+  if (req.session.role !== 'admin' && (req.user||{}).role !== 'admin') {
+    console.log('Restore denied - not admin');
     return res.status(403).json({ error: 'Apenas admin' });
+  }
   try {
-    const backup = JSON.parse(req.file.buffer.toString());
+    let backup;
+    const isGz = req.file.originalname.endsWith('.gz') || req.file.mimetype === 'application/gzip';
+    if (isGz) {
+      const decompressed = zlib.gunzipSync(req.file.buffer);
+      backup = JSON.parse(decompressed.toString());
+    } else {
+      backup = JSON.parse(req.file.buffer.toString());
+    }
     if (!backup.dados) return res.status(400).json({ error: 'Arquivo inválido' });
     const d = backup.dados;
     const conn = await pool.getConnection();
@@ -936,11 +1111,22 @@ app.post('/api/restore', requireAuth, uploadMem.single('backup'), async (req, re
       }
       await conn.query('SET FOREIGN_KEY_CHECKS=1');
 
+      const parseDate = (v) => {
+        if (!v) return null;
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 19).replace('T', ' ');
+      };
+
       // Restaurar dados
       const insert = async (table, rows, cols) => {
         if (!rows?.length) return;
         for (const row of rows) {
-          const vals = cols.map(c => row[c] !== undefined ? row[c] : null);
+          const vals = cols.map(c => {
+            if ((c === 'criado_em' || c === 'data_ativacao' || c === 'data_abertura' || c === 'data_previsao' || c === 'data_conclusao' || c === 'enviado_em') && row[c]) {
+              return parseDate(row[c]);
+            }
+            return row[c] !== undefined ? row[c] : null;
+          });
           await conn.query(`INSERT INTO ${table} (${cols.join(',')}) VALUES (${cols.map(()=>'?').join(',')})`, vals);
         }
       };
@@ -960,7 +1146,7 @@ app.post('/api/restore', requireAuth, uploadMem.single('backup'), async (req, re
           const blob = doc.conteudo ? Buffer.from(doc.conteudo, 'base64') : null;
           await conn.query(
             `INSERT INTO portabilidade_docs (id,pedido_id,categoria,versao,nome_original,mime_type,tamanho,conteudo,enviado_por,enviado_em) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-            [doc.id,doc.pedido_id,doc.categoria,doc.versao||'1.0',doc.nome_original,doc.mime_type,doc.tamanho,blob,doc.enviado_por,doc.enviado_em]
+            [doc.id,doc.pedido_id,doc.categoria,doc.versao||'1.0',doc.nome_original,doc.mime_type,doc.tamanho,blob,doc.enviado_por,parseDate(doc.enviado_em)]
           );
         }
       }

@@ -107,6 +107,11 @@
   .row-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .12s;font-family:'Sora',sans-serif;}
   .row-btn:hover{border-color:var(--accent2);color:var(--accent2);}
   .row-btn.del:hover{border-color:var(--danger);color:var(--danger);}
+  .sortable{cursor:pointer;user-select:none;}
+  .sortable:hover{color:var(--accent2);}
+  .sortable.asc{color:var(--accent);}
+  .sortable.desc{color:var(--accent);}
+  .sort-icon{font-size:10px;opacity:.6;}
   .pagination{display:flex;align-items:center;gap:8px;padding:0 32px 24px;font-size:12px;color:var(--muted);}
   .pg-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;}
   .pg-btn:hover{border-color:var(--accent2);}
@@ -261,9 +266,11 @@
     <img class="header-logo-img" id="headerLogoImg" src="" alt="">
     <div class="logo" id="headerLogoText"><span id="headerNome1" style="color:var(--accent)">Tele</span><span id="headerNome2">CRM</span></div>
     <div class="nav-tabs">
+      <button class="nav-tab" onclick="showPage('dashboard',this)">📊 Dashboard</button>
       <button class="nav-tab active" onclick="showPage('numeros',this)">📋 Números</button>
       <button class="nav-tab" onclick="showPage('historico',this)">📜 Histórico</button>
       <button class="nav-tab" id="tabPorta" onclick="showPage('porta',this)">📋 Portabilidade</button>
+      <button class="nav-tab" id="tabConsOp" onclick="showPage('consop',this)">🔍 Consulta Operadora</button>
       <button class="nav-tab" id="tabUsuarios" onclick="showPage('usuarios',this)" style="display:none">👥 Usuários</button>
       <button class="nav-tab" id="tabConfig" onclick="showPage('config',this)" style="display:none">⚙️ Configurações</button>
     </div>
@@ -278,6 +285,68 @@
     </div>
   </header>
 
+  <!-- DASHBOARD -->
+  <div class="page" id="pageDashboard">
+    <div class="page-header"><div class="dot" style="background:var(--accent)"></div>Dashboard</div>
+    <div style="padding:20px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:all .2s">
+        <div style="font-size:32px;margin-bottom:4px">📱</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace" id="dashTotal">—</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Total de Números</div>
+      </div>
+      <div class="stat-card active" style="background:var(--surface);border:1px solid var(--green);border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:4px">✅</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--green)" id="dashAtivos">—</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Ativos</div>
+      </div>
+      <div class="stat-card inactive" style="background:var(--surface);border:1px solid var(--danger);border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:4px">❌</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--danger)" id="dashInativos">—</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Inativos</div>
+      </div>
+      <div class="stat-card pending" style="background:var(--surface);border:1px solid var(--warn);border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:4px">⏳</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--warn)" id="dashPendentes">—</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Pendentes</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--accent2);border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:4px">📅</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--accent2)" id="dashEsteMes">—</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Este Mês</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--purple);border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:4px">📆</div>
+        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--purple)" id="dashUltimos30">—</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Últimos 30 dias</div>
+      </div>
+    </div>
+
+    <div style="padding:0 32px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent2)">📊 Por Operadora</div>
+        <div id="dashPorOperadora"></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--warn)">🖥️ Por Servidor</div>
+        <div id="dashPorServidor"></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--purple)">🔄 Portabilidade</div>
+        <div style="display:flex;flex-direction:column;gap:12px" id="dashPortaStats"></div>
+      </div>
+    </div>
+
+    <div style="padding:0 32px 24px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent)">🕐 Recentes</div>
+      <div class="table-wrap" style="padding:0">
+        <table>
+          <thead><tr><th>ID</th><th>Empresa</th><th>Status</th><th>Criado em</th></tr></thead>
+          <tbody id="dashRecentes"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- NÚMEROS -->
   <div class="page active" id="pageNumeros">
     <div class="toolbar">
@@ -286,8 +355,17 @@
       <button class="btn btn-secondary" onclick="editSelected()">✏️ Editar</button>
       <button class="btn btn-warn" onclick="openOpsModal()">⚙️ Operadoras</button>
       <button class="btn btn-secondary" onclick="openImportModal()">📥 Importar CSV</button>
-      <button class="btn btn-excel" onclick="exportExcel()">📊 Excel</button>
-      <button class="btn btn-csv" onclick="exportCsv()">📄 CSV</button>
+      <div style="position:relative;display:inline-block">
+        <button class="btn btn-excel" onclick="toggleExportMenu(event)">📊 Exportar ▾</button>
+        <div id="exportMenu" style="display:none;position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;z-index:200;margin-top:4px;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,.3)">
+          <div style="padding:4px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Excel</div>
+          <div onclick="exportExcel();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)">📱 Números</div>
+          <div onclick="exportPortaExcel();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;color:var(--accent2);margin-bottom:8px">📱 Portabilidade</div>
+          <div style="padding:4px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CSV</div>
+          <div onclick="exportCsv();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)">📄 Números</div>
+          <div onclick="exportPortaCsv();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px">📄 Portabilidade</div>
+        </div>
+      </div>
       <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Empresa, número, IP..." oninput="debounceLoad()"></div>
     </div>
     <div class="filters">
@@ -295,11 +373,17 @@
       <button class="filter-btn" onclick="setFilter('Ativo',this)">✅ Ativos</button>
       <button class="filter-btn" onclick="setFilter('Inativo',this)">❌ Inativos</button>
       <button class="filter-btn" onclick="setFilter('Pendente',this)">⏳ Pendentes</button>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
+        <span style="color:var(--muted);font-size:12px">De:</span>
+        <input type="date" id="dateFrom" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px" onchange="debounceLoad()">
+        <span style="color:var(--muted);font-size:12px">Até:</span>
+        <input type="date" id="dateTo" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px" onchange="debounceLoad()">
+      </div>
     </div>
     <div class="result-count" id="resultCount">Carregando...</div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th class="cb"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th><th>ID</th><th>Empresa</th><th>Número(s)</th><th>Operadora</th><th>Servidor</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th class="cb"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th><th class="sortable" data-sort="id" onclick="sortBy('id',this)">ID <span class="sort-icon"></span></th><th class="sortable" data-sort="empresa" onclick="sortBy('empresa',this)">Empresa <span class="sort-icon"></span></th><th>Número(s)</th><th class="sortable" data-sort="operadora" onclick="sortBy('operadora',this)">Operadora <span class="sort-icon"></span></th><th class="sortable" data-sort="servidor" onclick="sortBy('servidor',this)">Servidor <span class="sort-icon"></span></th><th class="sortable" data-sort="status" onclick="sortBy('status',this)">Status <span class="sort-icon"></span></th><th class="sortable" data-sort="data_ativacao" onclick="sortBy('data_ativacao',this)">Data <span class="sort-icon"></span></th><th>Ações</th></tr></thead>
         <tbody id="tbody"><tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted)">Carregando...</td></tr></tbody>
       </table>
       <div id="emptyState" class="empty-state" style="display:none"><div class="icon">📭</div><p>Nenhum registro encontrado.</p></div>
@@ -312,6 +396,8 @@
     <div class="page-header"><div class="dot" style="background:var(--accent2)"></div>Pedidos de Portabilidade</div>
     <div class="toolbar" style="padding-top:16px">
       <button class="btn btn-add" id="btnNovoPorta" onclick="openPortaModal()">＋ Novo Pedido</button>
+      <button class="btn btn-excel" onclick="exportPortaExcel()">📊 Excel</button>
+      <button class="btn btn-csv" onclick="exportPortaCsv()">📄 CSV</button>
       <select id="portaFiltroStatus" class="btn btn-secondary" style="padding:8px 12px;cursor:pointer" onchange="loadPorta()">
         <option value="todos">Todos os status</option>
         <option value="Aberto">Aberto</option>
@@ -332,6 +418,52 @@
       <div id="emptyPorta" class="empty-state" style="display:none"><div class="icon">📋</div><p>Nenhum pedido encontrado.</p></div>
     </div>
     <div class="pagination" id="paginacaoPorta"></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="page" id="pageHistorico">
+    <div class="page-header"><div class="dot" style="background:var(--purple)"></div>Histórico de Alterações</div>
+  </div>
+
+  <!-- CONSULTA OPERADORA -->
+  <div class="page" id="pageConsop">
+    <div class="page-header"><div class="dot" style="background:var(--accent)"></div>Consulta de Operadora</div>
+    <div class="toolbar" style="padding-top:16px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;gap:8px;flex:1;max-width:400px">
+        <input type="text" id="consOpNum" placeholder="Digite o número com DDD" style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" maxlength="11" onkeydown="if(event.key==='Enter')consultarOperadoraRapido()">
+        <button class="btn btn-add" onclick="consultarOperadoraRapido()">🔍 Consultar</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="document.getElementById('consOpNum').value='';document.getElementById('consOpResult').style.display='none'">🗑 Limpar</button>
+      </div>
+    </div>
+    <div id="consOpResult" style="display:none;padding:24px 32px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:600px">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;font-size:14px">
+          <div style="padding:12px;background:var(--bg);border-radius:8px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Operadora</div>
+            <div style="font-size:18px;font-weight:600;color:var(--accent)" id="consOpOperadora">-</div>
+          </div>
+          <div style="padding:12px;background:var(--bg);border-radius:8px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Portabilidade</div>
+            <div style="font-size:18px;font-weight:600" id="consOpPortado">-</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Tipo</div>
+            <div style="font-size:14px" id="consOpTipo">-</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Estado</div>
+            <div style="font-size:14px" id="consOpEstado">-</div>
+          </div>
+          <div style="grid-column:span 2">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Cidade</div>
+            <div style="font-size:14px" id="consOpCidade">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="result-count" id="consOpCount" style="display:none;padding:0 32px 16px;font-size:13px;color:var(--muted)"></div>
   </div>
 
   <!-- HISTÓRICO -->
@@ -428,7 +560,7 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-add" onclick="downloadBackup()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.4);color:#a78bfa">⬇️ Baixar Backup</button>
           <button class="btn btn-secondary" onclick="document.getElementById('restoreFileInput').click()" style="background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);color:#f59e0b">⬆️ Restaurar Backup</button>
-          <input type="file" id="restoreFileInput" accept=".json" style="display:none" onchange="uploadRestore(this)">
+          <input type="file" id="restoreFileInput" accept=".json,.json.gz,application/gzip" style="display:none" onchange="uploadRestore(this)">
         </div>
         <div id="backupStatus" style="margin-top:12px;font-size:12px;color:var(--muted)"></div>
       </div>
@@ -472,6 +604,41 @@
         <button class="btn btn-warn" onclick="alterarSenha()" style="margin-top:4px">🔒 Alterar Senha</button>
       </div>
 
+      <!-- Consulta Operadora API -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:var(--accent2)"></div>API Consulta de Operadora</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Configure a URL da API para consulta automática de operadoras.</p>
+        <div class="config-row"><label>URL da API</label><input type="text" id="cfgApiConsOpUrl" placeholder="http://10.5.24.190:9001/src/api.php"></div>
+        <div class="config-row"><label>Login</label><input type="text" id="cfgApiConsOpLogin" placeholder="admin"></div>
+        <div class="config-row"><label>Senha</label><input type="password" id="cfgApiConsOpSenha" placeholder="123"></div>
+        <button class="btn btn-add" onclick="salvarApiConsulta()" style="margin-top:4px">💾 Salvar Configuração</button>
+        <div id="cfgApiConsOpStatus" style="margin-top:8px;font-size:12px"></div>
+      </div>
+
+      <!-- Consulta Operadora Manual -->
+      <div class="config-section">
+        <h3><div class="dot" style="background:var(--accent)"></div>Testar Consulta</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Consulte manualmente a operadora de um número de telefone.</p>
+        <div class="config-row">
+          <label>Número (com DDD)</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="cfgConsOpNum" placeholder="21999998888" maxlength="11" style="flex:1">
+            <button class="btn btn-add" onclick="consultarOperadoraManual()" style="font-size:12px;padding:8px 16px">🔍 Consultar</button>
+          </div>
+        </div>
+        <div id="cfgConsOpResult" style="margin-top:12px;display:none">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;font-size:13px">
+              <div><span style="color:var(--muted)">Operadora:</span> <strong id="resOpOperadora">-</strong></div>
+              <div><span style="color:var(--muted)">Portado:</span> <strong id="resOpPortado">-</strong></div>
+              <div><span style="color:var(--muted)">Tipo:</span> <strong id="resOpTipo">-</strong></div>
+              <div><span style="color:var(--muted)">Estado:</span> <strong id="resOpEstado">-</strong></div>
+              <div style="grid-column:span 2"><span style="color:var(--muted)">Cidade:</span> <strong id="resOpCidade">-</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -508,7 +675,7 @@
       <div class="form-group full">
         <label>Números a Portar</label>
         <div style="display:flex;gap:8px"><input type="text" id="pNumInput" placeholder="Digite e pressione Enter (suporte a faixas)" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addPortaTag();}"><button class="btn-save" style="padding:9px 14px;border-radius:8px;flex-shrink:0" onclick="addPortaTag()">+</button></div>
-        <div class="form-hint">Use <strong style="color:var(--accent)">33221120-33221130</strong> para faixa sequencial</div>
+        <div class="form-hint">Use <strong style="color:var(--accent)">33221120-33221130</strong> para faixa sequencial. A operadora será automaticamente preenchida ao adicionar.</div>
         <div class="tags-wrap" id="portaTagsWrap"></div>
       </div>
       <div class="form-group full"><label>Observações</label><textarea id="pObs" placeholder="Anotações sobre o pedido..."></textarea></div>
@@ -653,6 +820,18 @@ let filterStatus='todos', editingId=null, editingUserId=null;
 let numTags=[], operadoras=[], importFile=null, logoFilePending=null;
 let debounceTimer=null, currentPage=1, histPage=1;
 let currentUser=null, appConfig={};
+let sortCol='', sortDir='asc';
+
+function sortBy(col, thEl){
+  if(sortCol===col){sortDir=sortDir==='asc'?'desc':'asc';}
+  else{sortCol=col;sortDir='asc';}
+  document.querySelectorAll('.sortable').forEach(t=>{ t.classList.remove('asc','desc'); const icon=t.querySelector('.sort-icon'); if(icon)icon.textContent=''; });
+  thEl.classList.add(sortDir);
+  const icon=thEl.querySelector('.sort-icon');
+  if(icon)icon.textContent=sortDir==='asc'?' ▲':' ▼';
+  currentPage=1;
+  loadData();
+}
 
 async function api(path, opts={}) {
   const res = await fetch(API+path, { headers:{'Content-Type':'application/json'}, credentials:'include', ...opts, body:opts.body?JSON.stringify(opts.body):undefined });
@@ -714,10 +893,15 @@ function applyConfig(cfg) {
     document.getElementById('logoPreviewImg').src = logo;
     document.getElementById('logoPreviewImg').style.display = 'block';
     document.getElementById('logoPlaceholder').style.display = 'none';
-    document.getElementById('previewLogoImg').src = logo;
-    document.getElementById('previewLogoImg').style.display = 'block';
-    document.getElementById('previewLogoTextFallback').style.display = 'none';
+  } else {
+    document.getElementById('logoPreviewImg').style.display = 'none';
+    document.getElementById('logoPlaceholder').style.display = 'block';
   }
+
+  // API Consulta Operadora
+  if(cfg.api_consulta_operadora_url) document.getElementById('cfgApiConsOpUrl').value = cfg.api_consulta_operadora_url;
+  if(cfg.api_consulta_operadora_login) document.getElementById('cfgApiConsOpLogin').value = cfg.api_consulta_operadora_login;
+  if(cfg.api_consulta_operadora_senha) document.getElementById('cfgApiConsOpSenha').value = cfg.api_consulta_operadora_senha;
 }
 
 function updatePreview() {
@@ -738,6 +922,20 @@ async function saveConfig() {
   await api('/config', { method:'PUT', body:{ app_nome:nome, app_subtitulo:sub } });
   await loadConfig();
   toast('✅ Nome atualizado com sucesso!');
+}
+
+async function salvarApiConsulta(){
+  const url=document.getElementById('cfgApiConsOpUrl').value.trim();
+  const login=document.getElementById('cfgApiConsOpLogin').value.trim();
+  const senha=document.getElementById('cfgApiConsOpSenha').value;
+  if(!url){toast('❌ Informe a URL da API',true);return;}
+  const st=document.getElementById('cfgApiConsOpStatus');
+  st.textContent='Salvando...';st.style.color='var(--warn)';
+  try{
+    await api('/config',{method:'PUT',body:{api_consulta_operadora_url:url,api_consulta_operadora_login:login,api_consulta_operadora_senha:senha}});
+    st.textContent='✅ Salvo com sucesso!';st.style.color='var(--green)';
+    toast('✅ Configuração da API salva!');
+  }catch(e){st.textContent='❌ '+e.message;st.style.color='var(--danger)';toast('❌ '+e.message,true);}
 }
 
 function handleLogoFile(input) {
@@ -842,6 +1040,57 @@ async function alterarSenha() {
   } catch(e) { toast('❌ '+e.message,true); }
 }
 
+async function consultarOperadoraManual(){
+  const num = document.getElementById('cfgConsOpNum').value.replace(/\D/g,'');
+  if(num.length<10){toast('❌ Digite um número com DDD (mínimo 10 dígitos)',true);return;}
+  const btn = event.target;
+  btn.disabled=true;btn.textContent='Consultando...';
+  try{
+    const r = await api('/consulta-operadora?numero='+encodeURIComponent(num));
+    const resDiv = document.getElementById('cfgConsOpResult');
+    if(r.resposta==='ok'){
+      document.getElementById('resOpOperadora').textContent = r.operadora || '-';
+      document.getElementById('resOpPortado').textContent = r.portado || '-';
+      document.getElementById('resOpTipo').textContent = r.tipo || '-';
+      document.getElementById('resOpEstado').textContent = r.estado || '-';
+      document.getElementById('resOpCidade').textContent = r.cidade || '-';
+      resDiv.style.display = 'block';
+      toast('✅ Consulta realizada!');
+    }else{
+      resDiv.style.display = 'none';
+      toast('❌ Número não encontrado',true);
+    }
+  }catch(e){toast('❌ Erro: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='🔍 Consultar';}
+}
+
+async function consultarOperadoraRapido(){
+  const num = document.getElementById('consOpNum').value.replace(/\D/g,'');
+  if(num.length<10){toast('❌ Digite um número com DDD',true);return;}
+  const btn = event.target;
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const r = await api('/consulta-operadora?numero='+encodeURIComponent(num));
+    const resDiv = document.getElementById('consOpResult');
+    if(r.resposta==='ok'){
+      document.getElementById('consOpOperadora').textContent = r.operadora || '-';
+      const portaEl = document.getElementById('consOpPortado');
+      portaEl.textContent = r.portado || '-';
+      portaEl.style.color = r.portado==='SIM' ? 'var(--warn)' : 'var(--green)';
+      document.getElementById('consOpTipo').textContent = r.tipo || '-';
+      document.getElementById('consOpEstado').textContent = r.estado || '-';
+      document.getElementById('consOpCidade').textContent = r.cidade || '-';
+      resDiv.style.display = 'block';
+      document.getElementById('consOpCount').style.display = 'block';
+      document.getElementById('consOpCount').textContent = 'Consulta realizada para: '+num;
+    }else{
+      resDiv.style.display = 'none';
+      toast('❌ Número não encontrado',true);
+    }
+  }catch(e){toast('❌ Erro: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='🔍 Consultar';}
+}
+
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 async function doLogin() {
   const username = document.getElementById('lUser').value.trim();
@@ -930,10 +1179,60 @@ function showPage(name, btn) {
   const pg = document.getElementById('page'+name.charAt(0).toUpperCase()+name.slice(1));
   if(pg) pg.classList.add('active');
   if(btn) btn.classList.add('active');
+  if(name==='dashboard') loadDashboard();
   if(name==='porta')     { if(!hasPermission('ver_portabilidade')){toast('❌ Sem permissão.',true);return;} loadPorta(); }
   if(name==='historico') { if(!hasPermission('ver_historico')){toast('❌ Sem permissão.',true);return;} loadHistorico(); }
   if(name==='usuarios')  { if(currentUser.role!=='admin'){toast('❌ Sem permissão.',true);return;} loadUsuarios(); }
   if(name==='config')    { if(currentUser.role!=='admin'){toast('❌ Sem permissão.',true);return;} loadConfig(); loadWebhook(); }
+  if(name==='consop')    { document.getElementById('consOpNum').focus(); }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('/dashboard');
+    document.getElementById('dashTotal').textContent = d.stats?.total || 0;
+    document.getElementById('dashAtivos').textContent = d.stats?.ativos || 0;
+    document.getElementById('dashInativos').textContent = d.stats?.inativos || 0;
+    document.getElementById('dashPendentes').textContent = d.stats?.pendentes || 0;
+    document.getElementById('dashEsteMes').textContent = d.esteMes || 0;
+    document.getElementById('dashUltimos30').textContent = d.ultimos30 || 0;
+
+    const mkBar = (label, value, color, total) => {
+      const pct = total > 0 ? (value / total * 100).toFixed(1) : 0;
+      return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--text)">${label}</span><span style="font-family:'Space Mono',monospace;color:${color}">${value}</span></div><div style="background:var(--surface2);height:6px;border-radius:3px"><div style="background:${color};height:100%;width:${pct}%;border-radius:3px"></div></div></div>`;
+    };
+
+    const opContainer = document.getElementById('dashPorOperadora');
+    if(d.porOperadora?.length) {
+      const totalOp = d.porOperadora.reduce((s,x)=>s+x.total,0);
+      opContainer.innerHTML = d.porOperadora.slice(0,6).map(o=>mkBar(o.operadora||'—', o.total, 'var(--accent2)', totalOp)).join('');
+    } else { opContainer.innerHTML = '<div style="color:var(--muted);font-size:12px">Nenhum dado</div>'; }
+
+    const servContainer = document.getElementById('dashPorServidor');
+    if(d.porServidor?.length) {
+      const totalServ = d.porServidor.reduce((s,x)=>s+x.total,0);
+      servContainer.innerHTML = d.porServidor.slice(0,6).map(s=>mkBar(s.servidor||'—', s.total, 'var(--warn)', totalServ)).join('');
+    } else { servContainer.innerHTML = '<div style="color:var(--muted);font-size:12px">Nenhum dado</div>'; }
+
+    const portaContainer = document.getElementById('dashPortaStats');
+    if(d.portaStats) {
+      portaContainer.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Total</span><span style="font-family:'Space Mono',monospace;font-weight:600">${d.portaStats.total||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Pendente</span><span style="font-family:'Space Mono',monospace;font-weight:600;color:var(--warn)">${d.portaStats.pendente||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Concluído</span><span style="font-family:'Space Mono',monospace;font-weight:600;color:var(--green)">${d.portaStats.concluido||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Cancelado</span><span style="font-family:'Space Mono',monospace;font-weight:600;color:var(--danger)">${d.portaStats.cancelado||0}</span></div>
+      `;
+    } else { portaContainer.innerHTML = '<div style="color:var(--muted);font-size:12px">Nenhum dado</div>'; }
+
+    const recContainer = document.getElementById('dashRecentes');
+    if(d.recentes?.length) {
+      recContainer.innerHTML = d.recentes.map(r=>{
+        const sc = r.status==='Ativo'?'var(--green)':r.status==='Inativo'?'var(--danger)':'var(--warn)';
+        return `<tr><td class="id-cell">#${r.id}</td><td class="company-cell">${r.empresa}</td><td><span class="status-badge ${r.status==='Ativo'?'status-ativo':r.status==='Inativo'?'status-inativo':'status-pendente'}">${r.status}</span></td><td style="font-size:12px;font-family:'Space Mono',monospace;color:var(--muted)">${fmtDate(r.criado_em)}</td></tr>`;
+      }).join('');
+    } else { recContainer.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Nenhum registro recente</td></tr>'; }
+  } catch(e) { console.error('Dashboard error:', e); }
 }
 
 // ── OPERADORAS ────────────────────────────────────────────────────────────────
@@ -965,7 +1264,12 @@ document.getElementById('newOpInput').addEventListener('keydown', e=>{ if(e.key=
 // ── TABELA NÚMEROS ────────────────────────────────────────────────────────────
 async function loadData() {
   const q=document.getElementById('searchInput').value.trim();
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
   const params=new URLSearchParams({q,status:filterStatus,page:currentPage,limit:50});
+  if(sortCol){params.set('sort',sortCol);params.set('dir',sortDir);}
+  if(from)params.set('from',from);
+  if(to)params.set('to',to);
   const {data,total,stats}=await api('/numeros?'+params);
   document.getElementById('statTotal').textContent  = stats.total;
   document.getElementById('statAtivo').textContent  = stats.ativos;
@@ -1050,6 +1354,11 @@ function toggleAll(cb){document.querySelectorAll('.row-cb').forEach(c=>c.checked
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
 function exportExcel(){const p=new URLSearchParams({q:document.getElementById('searchInput').value.trim(),status:filterStatus});window.location.href=`${API}/export/excel?${p}`;}
 function exportCsv(){const p=new URLSearchParams({q:document.getElementById('searchInput').value.trim(),status:filterStatus});window.location.href=`${API}/export/csv?${p}`;}
+function exportPortaExcel(){window.location.href=`${API}/export/porta/excel`;}
+function exportPortaCsv(){window.location.href=`${API}/export/porta/csv`;}
+function toggleExportMenu(e){e.stopPropagation();const m=document.getElementById('exportMenu');m.style.display=m.style.display==='none'?'block':'none';}
+function closeExportMenu(){document.getElementById('exportMenu').style.display='none';}
+document.addEventListener('click',function(e){if(!e.target.closest('#exportMenu')&&!e.target.closest('.btn-excel'))closeExportMenu();});
 function openImportModal(){importFile=null;document.getElementById('importResults').style.display='none';document.getElementById('btnImport').disabled=true;document.getElementById('dropZone').querySelector('p').innerHTML='<strong>Clique para selecionar</strong> ou arraste aqui';document.getElementById('overlayImport').classList.add('show');}
 function closeImportModal(){document.getElementById('overlayImport').classList.remove('show');}
 function downloadTemplate(){window.location.href=`${API}/import/template`;}
@@ -1179,7 +1488,7 @@ async function downloadBackup(){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     const data=new Date().toISOString().split('T')[0];
-    a.href=url;a.download=`voipflow-backup-${data}.json`;a.click();
+    a.href=url;a.download=`voipflow-backup-${data}.json.gz`;a.click();
     URL.revokeObjectURL(url);
     st.textContent='✅ Backup gerado com sucesso!';
     st.style.color='var(--green)';
@@ -1195,19 +1504,29 @@ async function uploadRestore(input){
   if(!confirm('⚠️ ATENÇÃO: Isso irá SUBSTITUIR todos os dados atuais pelo backup. Continuar?'))return;
   const st=document.getElementById('backupStatus');
   st.textContent='⏳ Restaurando backup...';st.style.color='var(--warn)';
+  console.log('Uploading backup:', file.name, file.size, file.type);
   try{
     const token=localStorage.getItem('telecrm_token')||'';
     const headers={};if(token)headers['Authorization']='Bearer '+token;
     const fd=new FormData();fd.append('backup',file);
     const r=await fetch('/api/restore',{method:'POST',credentials:'include',headers,body:fd});
+    console.log('Restore response:', r.status, r.statusText, r.headers.get('content-type'));
+    const contentType=r.headers.get('content-type')||'';
+    if(!r.ok){
+      if(contentType.includes('application/json')){
+        const data=await r.json();throw new Error(data.error||'Erro');
+      }else{
+        const text=await r.text();console.error('Restore error response:', text.substring(0,500));throw new Error(`Erro ${r.status}: O servidor não respondeu corretamente. Verifique se o arquivo é .json.gz válido.`);
+      }
+    }
     const data=await r.json();
-    if(!r.ok)throw new Error(data.error||'Erro');
     st.textContent='✅ Backup restaurado! Recarregando...';st.style.color='var(--green)';
     toast('✅ Backup restaurado com sucesso!');
     setTimeout(()=>location.reload(),2000);
   }catch(e){
     st.textContent='❌ '+e.message;st.style.color='var(--danger)';
     toast('❌ '+e.message,true);
+    console.error('Restore error:', e);
   }
   input.value='';
 }
@@ -1303,9 +1622,52 @@ function addPortaTag(){
     parseRange(part).forEach(n=>{if(n&&!portaNumTags.includes(n))portaNumTags.push(n);});
   });
   inp.value='';renderPortaTags();
+  
+  // Auto-consultar operadora do primeiro número
+  if(portaNumTags.length>0){
+    const num = portaNumTags[0].replace(/\D/g,'');
+    if(num.length>=10)consultarOperadoraAuto(num);
+  }
+}
+
+async function consultarOperadoraAuto(num){
+  try{
+    const r=await api('/consulta-operadora?numero='+encodeURIComponent(num));
+    if(r.resposta==='ok'&&r.operadora){
+      const opOrigem=document.getElementById('pOpOrigem');
+      const opts=Array.from(opOrigem.options).map(o=>o.value);
+      const match=opts.find(o=>r.operadora.toUpperCase().includes(o.toUpperCase()));
+      if(match){
+        opOrigem.value=match;
+        toast('✅ Operadora: '+match);
+      }else{
+        toast('⚠️ Operadora não encontrada na lista: '+r.operadora+'. Selecione manualmente.',true);
+      }
+      if(r.portado==='SIM'){toast('⚠️ Número portado de outra operadora!',true);}
+    }else{
+      toast('❌ Operadora não encontrada para este número',true);
+    }
+  }catch(e){console.log('Erro consulta operador:',e);}
 }
 function removePortaTag(i){portaNumTags.splice(i,1);renderPortaTags();}
 function renderPortaTags(){document.getElementById('portaTagsWrap').innerHTML=portaNumTags.map((n,i)=>`<span class="num-tag">${n} <button onclick="removePortaTag(${i})">×</button></span>`).join('');}
+async function consultarOperadoraPorta(){
+  const num=document.getElementById('pNumInput').value.trim();
+  if(!num){toast('Digite um número primeiro',true);return;}
+  const btn=document.getElementById('btnConsultarOperadora');
+  btn.disabled=true;btn.textContent='Consultando...';
+  try{
+    const r=await api('/consulta-operadora?numero='+encodeURIComponent(num.replace(/\D/g,'')));
+    if(r.resposta==='ok'&&r.operadora){
+      const opOrigem=document.getElementById('pOpOrigem');
+      const opts=Array.from(opOrigem.options).map(o=>o.value);
+      const match=opts.find(o=>r.operadora.toUpperCase().includes(o.toUpperCase()));
+      if(match){opOrigem.value=match;toast('✅ Operadora: '+r.operadora);}else{toast('⚠️ Operadora encontrada: '+r.operadora+' (selecione manualmente)',true);}
+      if(r.portado==='SIM'){toast('⚠️ Número portado!',true);}
+    }else{toast('❌ Número não encontrado',true);}
+  }catch(e){toast('❌ Erro: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='🔍 Consultar Operadora';}
+}
 
 // Abrir modal
 async function openPortaModal(id=null){
@@ -1478,36 +1840,40 @@ async function gerarTermoRapido(id) {
     const empresa = p.empresa || '___________________________';
     const doc     = p.cnpj_cpf || '___________________________';
     const numeros = p.numeros || [];
+    const opOrigem = p.operadora_origem ? p.operadora_origem.toUpperCase() : 'OPERADORA ORIGEM';
     const tipoDoc = doc.includes('/') || doc.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF';
 
     const numHtml = numeros.length
-      ? numeros.map(n => `<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center;margin:4px 0">${n}</div>`).join('')
-      : '<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center">___________________________</div>';
+      ? numeros.map(n => {
+          const clean = n.replace(/\D/g,'');
+          const ddd = clean.slice(0,2) || '00';
+          const num = clean.slice(2) || n;
+          return `<div style="font-size:16px;font-weight:bold;margin:8px 0">Telefone fixo: ( ${ddd} ) ${num}</div>`;
+        }).join('')
+      : '<div style="font-size:16px;font-weight:bold;margin:8px 0">Telefone fixo: ( __ ) _________</div>';
 
-    const u = v => `<span style="border-bottom:1px solid #111;display:inline-block;min-width:10px;padding:0 4px;font-weight:bold">${v}</span>`;
+    const u = v => v;
 
     document.getElementById('termoConteudo').innerHTML = `
-      <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:30px;text-transform:uppercase;letter-spacing:1px">
+      <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:24px;text-transform:uppercase;letter-spacing:1px">
         Solicitação de Portabilidade Numérica
       </div>
-      <p style="margin-bottom:14px">À<br>A/C: Departamento Portabilidade Numérica</p>
-      <p style="margin-bottom:14px;text-align:justify">
-        Eu, ${u(empresa)}, inscrita no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do(s) Telefone(s) fixo(s):
+      <p style="margin-bottom:12px;text-align:justify">
+        ${opOrigem}<br>A/C: Departamento Portabilidade Numérica
+      </p>
+      <p style="margin-bottom:12px;text-align:justify">
+        Eu, ${u(empresa)}, inscrito no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do:
       </p>
       <div style="margin:10px 0 20px">${numHtml}</div>
-      <p style="margin-bottom:14px;text-align:justify">
-        a entrar em contato com a operadora atual para efetivar a transferência do(s) meu(s) número(s) de telefone.
+      <p style="margin-bottom:12px;text-align:justify">
+        a entrar em contato com a operadora atual para efetivar a transferência do meu número de telefone.
       </p>
-      <p style="margin-bottom:14px;text-align:justify">
+      <p style="margin-bottom:12px;text-align:justify">
         Informamos ainda, que temos preferência para realizar a portabilidade na seguinte janela de horário:
       </p>
       <p style="margin-bottom:10px"><strong>Dias úteis, de Segunda a Sexta-feira:</strong></p>
-      <div style="margin:0 0 20px 20px;line-height:2">
-        <div>( &nbsp; ) das 08:00 às 10:00</div>
-        <div>( &nbsp; ) das 10:00 às 12:00</div>
-        <div>( &nbsp; ) das 12:00 às 14:00</div>
-        <div>( &nbsp; ) das 14:00 às 16:00</div>
-        <div>( &nbsp; ) das 16:00 às 18:00</div>
+      <div style="margin:0 0 20px;line-height:1.8">
+        ( &nbsp; ) das 08:00 as 10:00 &nbsp;&nbsp; ( &nbsp; ) das 12:00 as 14:00 &nbsp;&nbsp; ( &nbsp; ) das 16:00 as 18:00
       </div>
       <div style="margin:30px 0 40px">
         Duque de Caxias, RJ, _______ de __________________ de _________.
@@ -1519,7 +1885,7 @@ async function gerarTermoRapido(id) {
         </div>
         <div style="flex:1;text-align:center">
           <div style="border-bottom:1px solid #111;height:36px;margin-bottom:6px"></div>
-          <div style="font-size:12px">CPF</div>
+          <div style="font-size:12px">${tipoDoc}</div>
         </div>
       </div>`;
 
@@ -1532,37 +1898,42 @@ function gerarTermoPortabilidade() {
   const empresa  = document.getElementById('pEmpresa').value.trim()  || '___________________________';
   const doc      = document.getElementById('pDoc').value.trim()       || '___________________________';
   const numeros  = [...portaNumTags];
+  const opOrigemSel = document.getElementById('pOpOrigem');
+  const opOrigem = opOrigemSel.selectedIndex > 0 ? opOrigemSel.options[opOrigemSel.selectedIndex].text.trim().toUpperCase() : 'OPERADORA ORIGEM';
 
   const tipoDoc  = doc.includes('/') || doc.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF';
 
   const numHtml  = numeros.length
-    ? numeros.map(n => `<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center;margin:4px 0">${n}</div>`).join('')
-    : '<div style="font-size:18px;font-weight:bold;letter-spacing:2px;text-align:center">___________________________</div>';
+    ? numeros.map(n => {
+        const clean = n.replace(/\D/g,'');
+        const ddd = clean.slice(0,2) || '00';
+        const num = clean.slice(2) || n;
+        return `<div style="font-size:16px;font-weight:bold;margin:8px 0">Telefone fixo: ( ${ddd} ) ${num}</div>`;
+      }).join('')
+    : '<div style="font-size:16px;font-weight:bold;margin:8px 0">Telefone fixo: ( __ ) _________</div>';
 
-  const u = v => `<span style="border-bottom:1px solid #111;display:inline-block;min-width:10px;padding:0 4px;font-weight:bold">${v}</span>`;
+  const u = v => v;
 
   document.getElementById('termoConteudo').innerHTML = `
-    <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:30px;text-transform:uppercase;letter-spacing:1px">
+    <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:24px;text-transform:uppercase;letter-spacing:1px">
       Solicitação de Portabilidade Numérica
     </div>
-    <p style="margin-bottom:14px">À<br>A/C: Departamento Portabilidade Numérica</p>
-    <p style="margin-bottom:14px;text-align:justify">
-      Eu, ${u(empresa)}, inscrita no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do(s) Telefone(s) fixo(s):
+    <p style="margin-bottom:12px;text-align:justify">
+      ${opOrigem}<br>A/C: Departamento Portabilidade Numérica
+    </p>
+    <p style="margin-bottom:12px;text-align:justify">
+      Eu, ${u(empresa)}, inscrito no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do:
     </p>
     <div style="margin:10px 0 20px">${numHtml}</div>
-    <p style="margin-bottom:14px;text-align:justify">
-      a entrar em contato com a operadora atual para efetivar a transferência do(s) meu(s) número(s) de telefone.
+    <p style="margin-bottom:12px;text-align:justify">
+      a entrar em contato com a operadora atual para efetivar a transferência do meu número de telefone.
     </p>
-    <p style="margin-bottom:14px;text-align:justify">
+    <p style="margin-bottom:12px;text-align:justify">
       Informamos ainda, que temos preferência para realizar a portabilidade na seguinte janela de horário:
     </p>
     <p style="margin-bottom:10px"><strong>Dias úteis, de Segunda a Sexta-feira:</strong></p>
-    <div style="margin:0 0 20px 20px;line-height:2">
-      <div>( &nbsp; ) das 08:00 às 10:00</div>
-      <div>( &nbsp; ) das 10:00 às 12:00</div>
-      <div>( &nbsp; ) das 12:00 às 14:00</div>
-      <div>( &nbsp; ) das 14:00 às 16:00</div>
-      <div>( &nbsp; ) das 16:00 às 18:00</div>
+    <div style="margin:0 0 20px;line-height:1.8">
+      ( &nbsp; ) das 08:00 as 10:00 &nbsp;&nbsp; ( &nbsp; ) das 12:00 as 14:00 &nbsp;&nbsp; ( &nbsp; ) das 16:00 as 18:00
     </div>
     <div style="margin:30px 0 40px">
       Duque de Caxias, RJ, _______ de __________________ de _________.
@@ -1574,7 +1945,7 @@ function gerarTermoPortabilidade() {
       </div>
       <div style="flex:1;text-align:center">
         <div style="border-bottom:1px solid #111;height:36px;margin-bottom:6px"></div>
-        <div style="font-size:12px">CPF</div>
+        <div style="font-size:12px">${tipoDoc}</div>
       </div>
     </div>`;
 
