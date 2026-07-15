@@ -4,15 +4,14 @@ services:
     container_name: telecrm_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
       MYSQL_DATABASE: telecrm
       MYSQL_USER: telecrm
-      MYSQL_PASSWORD: telecrm_pass
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-telecrm_pass}
     volumes:
       - db_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "3306:3306"
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # 3306 NÃO exposto no host (só acessível pela rede interna do compose)
     healthcheck:
       test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "telecrm", "-ptelecrm_pass"]
       interval: 5s
@@ -29,8 +28,11 @@ services:
       DB_PORT: 3306
       DB_NAME: telecrm
       DB_USER: telecrm
-      DB_PASS: telecrm_pass
+      DB_PASS: ${MYSQL_PASSWORD:-telecrm_pass}
       PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-CHANGE_ME_IN_PROD}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:9000}
     volumes:
       - uploads_data:/app/uploads
       - docs_data:/app/docs

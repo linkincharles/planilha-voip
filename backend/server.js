@@ -4,7 +4,12 @@ const mysql          = require('mysql2/promise');
 const bcrypt         = require('bcryptjs');
 const session        = require('express-session');
 const jwt            = require('jsonwebtoken');
-const JWT_SECRET     = process.env.JWT_SECRET || 'telecrm_jwt_2024_secret';
+const JWT_SECRET     = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET (ou SESSION_SECRET) não definido. Defina a variável de ambiente.');
+  process.exit(1);
+}
+const SESSION_SECRET = JWT_SECRET;
 const multer         = require('multer');
 const ExcelJS        = require('exceljs');
 const { parse }      = require('csv-parse/sync');
@@ -40,18 +45,23 @@ const clearStatsCache = () => { statsCache = { data: null, timestamp: 0 }; };
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(cors({ origin: true, credentials: true }));
+// CORS: origem explícita (não wildcard) quando há credenciais
+const CORS_ORIGIN = (process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: CORS_ORIGIN.length ? CORS_ORIGIN : false,
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
   name: 'telecrm.sid',
-  secret: 'telecrm_secret_2024',
-  resave: true,
+  secret: SESSION_SECRET,
+  resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 28800000,
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax'
     // sem domain — funciona em qualquer IP
   }
@@ -63,12 +73,23 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const docsDir = '/app/docs';
 if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 // fallback tmp
-['/tmp/telecrm_uploads','/tmp/telecrm_docs'].forEach(d=>{try{if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});}catch(e){}});
+// Upload: imagens em disco para logo — valida tipo via magic bytes/mimetype
+const ALLOWED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'];
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, 'logo' + path.extname(file.originalname))
+  filename: (req, file, cb) => {
+    const ext = (file.originalname.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+    cb(null, 'logo.' + ext);
+  }
 });
-const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } });
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_LOGO_TYPES.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Tipo de arquivo não permitido para logo (use PNG/JPG/GIF/WEBP/SVG)'));
+  }
+});
 const uploadMem = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Docs salvos no banco — multer em memória
@@ -134,6 +155,15 @@ function requirePermissao(perm) {
     if (!temPermissao(req, perm)) return res.status(403).json({ error: 'Sem permissão para esta ação' });
     next();
   };
+}
+
+// Apenas admin (usa req.user, não req.session direto — funciona com JWT ou sessão)
+function requireAdmin(req, res, next) {
+  const user = getTokenUser(req);
+  if (!user) return res.status(401).json({ error: 'Não autenticado' });
+  req.user = user;
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  next();
 }
 
 // ── Log + Webhook ─────────────────────────────────────────────────────────────
@@ -220,7 +250,7 @@ app.get('/api/config', async (req, res) => {
 });
 
 app.put('/api/config', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   const allowedKeys = ['app_nome', 'app_subtitulo', 'api_consulta_operadora_url', 'api_consulta_operadora_login', 'api_consulta_operadora_senha'];
   for (const [k, v] of Object.entries(req.body)) {
     if (allowedKeys.includes(k)) {
@@ -235,7 +265,7 @@ app.put('/api/config', requireAuth, async (req, res) => {
 });
 
 app.post('/api/config/logo', requireAuth, upload.single('logo'), async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
   const url = '/api/logo/' + req.file.filename + '?t=' + Date.now();
   await pool.query(
@@ -247,7 +277,7 @@ app.post('/api/config/logo', requireAuth, upload.single('logo'), async (req, res
 
 // ── Webhook config ───────────────────────────────────────────────────────────
 app.get('/api/config/webhook', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   try {
     const [[row]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'webhook_url'");
     res.json({ webhook_url: row?.valor || '' });
@@ -255,7 +285,7 @@ app.get('/api/config/webhook', requireAuth, async (req, res) => {
 });
 
 app.put('/api/config/webhook', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   const { webhook_url } = req.body;
   await pool.query(
     "INSERT INTO configuracoes (chave, valor) VALUES ('webhook_url',?) ON DUPLICATE KEY UPDATE valor=?",
@@ -266,7 +296,7 @@ app.put('/api/config/webhook', requireAuth, async (req, res) => {
 });
 
 app.post('/api/config/webhook/test', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   const { webhook_url } = req.body;
   if (!webhook_url) return res.status(400).json({ error: 'URL não informada' });
   try {
@@ -294,7 +324,7 @@ app.post('/api/config/webhook/test', requireAuth, async (req, res) => {
 });
 
 app.delete('/api/config/logo', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   await pool.query("DELETE FROM configuracoes WHERE chave = 'app_logo'");
   // Remove arquivo físico
   ['png','jpg','jpeg','gif','webp','svg'].forEach(ext => {
@@ -315,6 +345,10 @@ const RATE_LIMIT_MAX = 5;
 
 const checkRateLimit = (ip) => {
   const now = Date.now();
+  // GC: limpa entradas expiradas para não vazar memória
+  for (const k in loginAttempts) {
+    if (now > loginAttempts[k].resetAt) delete loginAttempts[k];
+  }
   if (!loginAttempts[ip]) loginAttempts[ip] = { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
   if (now > loginAttempts[ip].resetAt) { loginAttempts[ip] = { count: 0, resetAt: now + RATE_LIMIT_WINDOW }; }
   loginAttempts[ip].count++;
@@ -367,22 +401,6 @@ app.post('/api/auth/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
-// Rota debug — remover após resolver
-app.get('/api/debug/session', (req, res) => {
-  res.json({
-    sessionID: req.sessionID,
-    userId: req.session.userId || null,
-    role: req.session.role || null,
-    session: req.session,
-    cookies: req.headers.cookie || 'nenhum cookie',
-    headers: {
-      host: req.headers.host,
-      origin: req.headers.origin,
-      referer: req.headers.referer
-    }
-  });
-});
-
 app.get('/api/auth/me', (req, res) => {
   const user = getTokenUser(req);
   if (!user) return res.status(401).json({ error: 'Não autenticado' });
@@ -391,13 +409,13 @@ app.get('/api/auth/me', (req, res) => {
 
 // ── Usuários ──────────────────────────────────────────────────────────────────
 app.get('/api/usuarios', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   const [rows] = await pool.query('SELECT id, username, nome, role, permissoes, ativo, criado_em, ultimo_acesso FROM usuarios ORDER BY nome');
   res.json(rows);
 });
 
 app.post('/api/usuarios', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   const { username, nome, password, role = 'operador' } = req.body;
   if (!username || !nome || !password) return res.status(400).json({ error: 'Campos obrigatórios faltando' });
   const hash = await bcrypt.hash(password, 10);
@@ -413,7 +431,7 @@ app.post('/api/usuarios', requireAuth, async (req, res) => {
 });
 
 app.put('/api/usuarios/:id', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   const { nome, role, ativo, password } = req.body;
   const perms = role === 'admin' ? null : JSON.stringify(req.body.permissoes || []);
   if (password) {
@@ -427,7 +445,7 @@ app.put('/api/usuarios/:id', requireAuth, async (req, res) => {
 });
 
 app.delete('/api/usuarios/:id', requireAuth, async (req, res) => {
-  if (req.session.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  if ((req.user||{}).role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
   if (Number(req.params.id) === req.session.userId) return res.status(400).json({ error: 'Não pode remover a si mesmo' });
   await pool.query('DELETE FROM usuarios WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
@@ -670,10 +688,12 @@ app.get('/api/historico/:entidade/:id', requirePermissao('ver_historico'), async
 // EXPORTAÇÃO
 // ══════════════════════════════════════════════════════════════════════════════
 
-async function getFilteredNumeros(q, status) {
+async function getFilteredNumeros(q, status, from, to) {
   let where = 'WHERE 1=1';
   const params = [];
   if (status && status !== 'todos') { where += ' AND n.status = ?'; params.push(status); }
+  if (from) { where += ' AND n.data_ativacao >= ?'; params.push(from); }
+  if (to)   { where += ' AND n.data_ativacao <= ?'; params.push(to); }
   if (q) {
     where += ` AND (n.empresa LIKE ? OR n.servidor LIKE ? OR n.operadora LIKE ? OR
       EXISTS (SELECT 1 FROM numero_telefones nt WHERE nt.numero_id = n.id AND nt.telefone LIKE ?))`;
@@ -692,7 +712,7 @@ async function getFilteredNumeros(q, status) {
 }
 
 app.get('/api/export/excel', requirePermissao('exportar'), async (req, res) => {
-  const rows = await getFilteredNumeros(req.query.q || '', req.query.status);
+  const rows = await getFilteredNumeros(req.query.q || '', req.query.status, req.query.from, req.query.to);
   const wb = new ExcelJS.Workbook();
   wb.creator = 'TeleCRM';
   const ws = wb.addWorksheet('Números', { views: [{ state: 'frozen', ySplit: 1 }] });
@@ -737,7 +757,7 @@ app.get('/api/export/excel', requirePermissao('exportar'), async (req, res) => {
 });
 
 app.get('/api/export/csv', requirePermissao('exportar'), async (req, res) => {
-  const rows = await getFilteredNumeros(req.query.q || '', req.query.status);
+  const rows = await getFilteredNumeros(req.query.q || '', req.query.status, req.query.from, req.query.to);
   const csvData = rows.map(r => ({
     id: r.id, empresa: r.empresa, numeros: (r.numeros||[]).join(';'),
     operadora: r.operadora||'', servidor: r.servidor||'', status: r.status,
@@ -1194,10 +1214,9 @@ async function ensureAdminUser() {
         "INSERT INTO usuarios (username, nome, senha_hash, role) VALUES ('admin','Administrador',?,'admin')",
         [hash]
       );
-      console.log('✅ Usuário admin criado (senha: admin123)');
+      console.log('✅ Usuário admin criado (senha padrão: admin123 — TROQUE APÓS O PRIMEIRO ACESSO)');
     } else {
-      await pool.query("UPDATE usuarios SET senha_hash=? WHERE username='admin'", [hash]);
-      console.log('✅ Hash do admin sincronizado');
+      console.log('ℹ️ Admin já existe — senha preservada (não sobrescrita no boot)');
     }
   } catch(e) {
     console.error('Erro ao garantir admin:', e.message);

@@ -1,0 +1,10 @@
+# Segredos locais
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# Uploads (volumes gerenciados pelo Docker)
+backups/
