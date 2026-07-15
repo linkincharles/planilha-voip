@@ -516,8 +516,7 @@ app.get('/api/consulta-operadora', requireAuth, async (req, res) => {
 async function getRecord(id) {
   const [[row]] = await pool.query('SELECT * FROM numeros WHERE id = ?', [id]);
   if (!row) return null;
-  const [tels] = await pool.query('SELECT telefone FROM numero_telefones WHERE numero_id = ? ORDER BY id', [id]);
-  row.numeros = tels.map(t => t.telefone);
+  row.numeros = row.telefone ? [row.telefone] : [];
   return row;
 }
 
@@ -551,26 +550,19 @@ app.get('/api/numeros', requirePermissao('ver_numeros'), async (req, res) => {
   if (from) { where += ' AND n.data_ativacao >= ?'; params.push(from); }
   if (to) { where += ' AND n.data_ativacao <= ?'; params.push(to); }
   if (q) {
-    where += ` AND (n.empresa LIKE ? OR n.servidor LIKE ? OR n.operadora LIKE ? OR
-      EXISTS (SELECT 1 FROM numero_telefones nt WHERE nt.numero_id = n.id AND nt.telefone LIKE ?))`;
+    where += ` AND (n.empresa LIKE ? OR n.servidor LIKE ? OR n.operadora LIKE ? OR n.telefone LIKE ?)`;
     const like = `%${q}%`;
     params.push(like, like, like, like);
   }
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM numeros n ${where}`, params);
   const sort = req.query.sort || 'id';
   const dir = req.query.dir === 'desc' ? 'DESC' : 'ASC';
-  const safeSort = ['id','empresa','operadora','servidor','status','data_ativacao','criado_em'].includes(sort) ? sort : 'id';
+  const safeSort = ['id','empresa','telefone','operadora','servidor','status','data_ativacao','criado_em'].includes(sort) ? sort : 'id';
   const [rows] = await pool.query(
     `SELECT n.* FROM numeros n ${where} ORDER BY n.${safeSort} ${dir} LIMIT ? OFFSET ?`,
     [...params, Number(limit), offset]
   );
-  if (rows.length) {
-    const ids = rows.map(r => r.id);
-    const [tels] = await pool.query(`SELECT numero_id, telefone FROM numero_telefones WHERE numero_id IN (?) ORDER BY id`, [ids]);
-    const telMap = {};
-    tels.forEach(t => { if (!telMap[t.numero_id]) telMap[t.numero_id] = []; telMap[t.numero_id].push(t.telefone); });
-    rows.forEach(r => { r.numeros = telMap[r.id] || []; });
-  }
+  rows.forEach(r => { r.numeros = r.telefone ? [r.telefone] : []; });
   const stats = await getStats();
   res.json({ data: rows, total: Number(total), stats });
 });
@@ -582,42 +574,40 @@ app.get('/api/numeros/:id', requirePermissao('ver_numeros'), async (req, res) =>
 });
 
 app.post('/api/numeros', requirePermissao('criar_numero'), async (req, res) => {
-  const { empresa, operadora, servidor, status, contrato, obs, data_ativacao, numeros = [] } = req.body;
+  const { empresa, telefone, operadora, servidor, status, contrato, obs, data_ativacao } = req.body;
   if (!empresa) return res.status(400).json({ error: 'Empresa obrigatória' });
+  if (!telefone) return res.status(400).json({ error: 'Telefone obrigatório' });
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
     const [result] = await conn.query(
-      `INSERT INTO numeros (empresa, operadora, servidor, status, contrato, obs, data_ativacao) VALUES (?,?,?,?,?,?,?)`,
-      [empresa, operadora||null, servidor||null, status||'Ativo', contrato||null, obs||null, data_ativacao||null]
+      `INSERT INTO numeros (empresa, telefone, operadora, servidor, status, contrato, obs, data_ativacao) VALUES (?,?,?,?,?,?,?,?)`,
+      [empresa, telefone, operadora||null, servidor||null, status||'Ativo', contrato||null, obs||null, data_ativacao||null]
     );
     const id = result.insertId;
-    if (numeros.length) await conn.query('INSERT INTO numero_telefones (numero_id, telefone) VALUES ?', [numeros.map(n=>[id,n])]);
     await conn.commit();
     const rec = await getRecord(id);
     clearStatsCache();
-    await logAction((req.user||{}).userId || req.session.userId, 'CRIAR', 'numero', id, { empresa, status, operadora, servidor, numeros, contrato: contrato||null, obs: obs||null });
+    await logAction((req.user||{}).userId || req.session.userId, 'CRIAR', 'numero', id, { empresa, telefone, status, operadora, servidor, contrato: contrato||null, obs: obs||null });
     res.json(rec);
   } catch(e) { await conn.rollback(); throw e; } finally { conn.release(); }
 });
 
 app.put('/api/numeros/:id', requirePermissao('editar_numero'), async (req, res) => {
-  const { empresa, operadora, servidor, status, contrato, obs, data_ativacao, numeros = [] } = req.body;
+  const { empresa, telefone, operadora, servidor, status, contrato, obs, data_ativacao } = req.body;
   const { id } = req.params;
   const antes = await getRecord(id);
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
     await conn.query(
-      `UPDATE numeros SET empresa=?,operadora=?,servidor=?,status=?,contrato=?,obs=?,data_ativacao=? WHERE id=?`,
-      [empresa, operadora||null, servidor||null, status, contrato||null, obs||null, data_ativacao||null, id]
+      `UPDATE numeros SET empresa=?,telefone=?,operadora=?,servidor=?,status=?,contrato=?,obs=?,data_ativacao=? WHERE id=?`,
+      [empresa, telefone, operadora||null, servidor||null, status, contrato||null, obs||null, data_ativacao||null, id]
     );
-    await conn.query('DELETE FROM numero_telefones WHERE numero_id = ?', [id]);
-    if (numeros.length) await conn.query('INSERT INTO numero_telefones (numero_id, telefone) VALUES ?', [numeros.map(n=>[id,n])]);
     await conn.commit();
     const rec = await getRecord(id);
     clearStatsCache();
-    await logAction((req.user||{}).userId || req.session.userId, 'EDITAR', 'numero', id, { antes: { empresa: antes?.empresa, status: antes?.status, numeros: antes?.numeros, contrato: antes?.contrato, obs: antes?.obs }, depois: { empresa, status, numeros, servidor, contrato: contrato||null, obs: obs||null } });
+    await logAction((req.user||{}).userId || req.session.userId, 'EDITAR', 'numero', id, { antes: { empresa: antes?.empresa, telefone: antes?.telefone, status: antes?.status, contrato: antes?.contrato, obs: antes?.obs }, depois: { empresa, telefone, status, servidor, contrato: contrato||null, obs: obs||null } });
     res.json(rec);
   } catch(e) { await conn.rollback(); throw e; } finally { conn.release(); }
 });
@@ -639,7 +629,7 @@ app.delete('/api/numeros', requirePermissao('remover_numero'), async (req, res) 
   // Busca dados completos antes de deletar
   const registros = await Promise.all(ids.map(id => getRecord(id)));
   const removidos = registros.filter(Boolean).map(r => ({
-    id: r.id, empresa: r.empresa, numeros: r.numeros, servidor: r.servidor, operadora: r.operadora, status: r.status
+    id: r.id, empresa: r.empresa, telefone: r.telefone, servidor: r.servidor, operadora: r.operadora, status: r.status
   }));
   await pool.query('DELETE FROM numeros WHERE id IN (?)', [ids]);
   clearStatsCache();
@@ -695,19 +685,12 @@ async function getFilteredNumeros(q, status, from, to) {
   if (from) { where += ' AND n.data_ativacao >= ?'; params.push(from); }
   if (to)   { where += ' AND n.data_ativacao <= ?'; params.push(to); }
   if (q) {
-    where += ` AND (n.empresa LIKE ? OR n.servidor LIKE ? OR n.operadora LIKE ? OR
-      EXISTS (SELECT 1 FROM numero_telefones nt WHERE nt.numero_id = n.id AND nt.telefone LIKE ?))`;
+    where += ` AND (n.empresa LIKE ? OR n.servidor LIKE ? OR n.operadora LIKE ? OR n.telefone LIKE ?)`;
     const like = `%${q}%`;
     params.push(like, like, like, like);
   }
   const [rows] = await pool.query(`SELECT n.* FROM numeros n ${where} ORDER BY n.id DESC`, params);
-  if (rows.length) {
-    const ids = rows.map(r => r.id);
-    const [tels] = await pool.query(`SELECT numero_id, telefone FROM numero_telefones WHERE numero_id IN (?)`, [ids]);
-    const telMap = {};
-    tels.forEach(t => { if (!telMap[t.numero_id]) telMap[t.numero_id] = []; telMap[t.numero_id].push(t.telefone); });
-    rows.forEach(r => { r.numeros = telMap[r.id] || []; });
-  }
+  rows.forEach(r => { r.numeros = r.telefone ? [r.telefone] : []; });
   return rows;
 }
 
@@ -825,25 +808,27 @@ app.post('/api/import/csv', requirePermissao('importar'), uploadMem.single('file
   let records;
   try {
     const text = req.file.buffer.toString('utf-8').replace(/^\uFEFF/, '');
-    records = parse(text, { columns: true, delimiter: ';', skip_empty_lines: true, trim: true });
+    records = parse(text, { columns: true, delimiter: ',', skip_empty_lines: true, trim: true });
   } catch(e) { return res.status(400).json({ error: 'CSV inválido: ' + e.message }); }
 
   let criados = 0, erros = [];
   for (const [i, r] of records.entries()) {
     const empresa = r.empresa || r.Empresa;
     if (!empresa) { erros.push(`Linha ${i+2}: empresa vazia`); continue; }
+    const nums = (r.telefone||r.Telefone||r.numeros||r.Numeros||r['número']||'').split(/[;,]/).map(n=>n.trim()).filter(Boolean);
+    if (!nums.length) { erros.push(`Linha ${i+2}: telefone vazio`); continue; }
     try {
       const conn = await pool.getConnection();
-      await conn.beginTransaction();
-      const [result] = await conn.query(
-        `INSERT INTO numeros (empresa, operadora, servidor, status, contrato, obs, data_ativacao) VALUES (?,?,?,?,?,?,?)`,
-        [empresa, r.operadora||r.Operadora||null, r.servidor||r.Servidor||null,
-         r.status||r.Status||'Ativo', r.contrato||null, r.obs||null, null]
-      );
-      const id = result.insertId;
-      const nums = (r.numeros||r.Numeros||r['número']||'').split(/[;,]/).map(n=>n.trim()).filter(Boolean);
-      if (nums.length) await conn.query('INSERT INTO numero_telefones (numero_id, telefone) VALUES ?', [nums.map(n=>[id,n])]);
-      await conn.commit(); conn.release(); criados++;
+      for (const tel of nums) {
+        await conn.beginTransaction();
+        await conn.query(
+          `INSERT INTO numeros (empresa, telefone, operadora, servidor, status, contrato, obs, data_ativacao) VALUES (?,?,?,?,?,?,?,?)`,
+          [empresa, tel, r.operadora||r.Operadora||null, r.servidor||r.Servidor||null,
+           r.status||r.Status||'Ativo', r.contrato||null, r.obs||null, null]
+        );
+        await conn.commit(); criados++;
+      }
+      conn.release();
     } catch(e) { erros.push(`Linha ${i+2}: ${e.message}`); }
   }
   await logAction((req.user||{}).userId || req.session.userId, 'IMPORTAR_CSV', 'sistema', null, { criados, erros: erros.length });
@@ -851,9 +836,9 @@ app.post('/api/import/csv', requirePermissao('importar'), uploadMem.single('file
 });
 
 app.get('/api/import/template', requirePermissao('importar'), (req, res) => {
-  const t = 'empresa;numeros;operadora;servidor;status;contrato;obs\n' +
-    'EMPRESA EXEMPLO;35221560;AMERICANET;179.127.199.50;Ativo;;\n' +
-    'OUTRA EMPRESA;11999887766;VIVO;10.0.0.1;Ativo;;Observação aqui\n';
+  const t = 'empresa,telefone,operadora,servidor,status,contrato,obs\n' +
+    'EMPRESA EXEMPLO,35221560,AMERICANET,179.127.199.50,Ativo,,\n' +
+    'OUTRA EMPRESA,11999887766;11999887777,VIVO,10.0.0.1,Ativo,,Observação aqui\n';
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="template_importacao.csv"');
   res.send('\uFEFF' + t);
@@ -963,27 +948,26 @@ app.put('/api/portabilidade/:id', requirePermissao('editar_portabilidade'), asyn
       // Verifica se empresa já existe
       const [[existing]] = await pool.query('SELECT id FROM numeros WHERE empresa = ? LIMIT 1', [empresa]);
       if (existing) {
-        // Adiciona os números ao registro existente
-        const [[nr]] = await pool.query('SELECT telefones FROM numero_telefones WHERE numero_id = ? LIMIT 1', [existing.id]).catch(() => [[null]]);
+        // Adiciona os números como registros próprios
         for (const tel of numerosArr) {
-          await pool.query('INSERT IGNORE INTO numero_telefones (numero_id, telefone) VALUES (?,?)', [existing.id, tel]);
+          await pool.query('INSERT IGNORE INTO numeros (empresa, telefone, operadora) VALUES (?,?,?)', [empresa, tel, operadora_destino||null]);
         }
         numeroCopiadoId = existing.id;
         await logAction((req.user||{}).userId || req.session.userId, 'PORTA_CONCLUIDA_ADD', 'numero', existing.id, {
           empresa, numeros: numerosArr, origem: 'portabilidade', pedido_id: req.params.id
         });
       } else {
-        // Cria novo registro
-        const [nr] = await pool.query(
-          `INSERT INTO numeros (empresa, operadora, servidor, status, contrato, obs) VALUES (?,?,?,?,?,?)`,
-          [empresa, operadora_destino||null, null, 'Ativo',
-           depois.contrato||null, `Portabilidade concluída - Protocolo: ${depois.protocolo}`]
-        );
+        // Cria novo registro por número
         for (const tel of numerosArr) {
-          await pool.query('INSERT IGNORE INTO numero_telefones (numero_id, telefone) VALUES (?,?)', [nr.insertId, tel]);
+          await pool.query(
+            `INSERT INTO numeros (empresa, telefone, operadora, servidor, status, contrato, obs) VALUES (?,?,?,?,?,?,?)`,
+            [empresa, tel, operadora_destino||null, null, 'Ativo',
+             depois.contrato||null, `Portabilidade concluída - Protocolo: ${depois.protocolo}`]
+          );
         }
-        numeroCopiadoId = nr.insertId;
-        await logAction((req.user||{}).userId || req.session.userId, 'PORTA_CONCLUIDA_CRIAR', 'numero', nr.insertId, {
+        const [[novo]] = await pool.query('SELECT id FROM numeros WHERE empresa = ? ORDER BY id DESC LIMIT 1', [empresa]);
+        numeroCopiadoId = novo?.id || null;
+        await logAction((req.user||{}).userId || req.session.userId, 'PORTA_CONCLUIDA_CRIAR', 'numero', numeroCopiadoId, {
           empresa, numeros: numerosArr, origem: 'portabilidade', pedido_id: req.params.id
         });
       }
@@ -1076,7 +1060,6 @@ app.get('/api/backup', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Apenas admin' });
   try {
     const [numeros]   = await pool.query('SELECT * FROM numeros');
-    const [telefones] = await pool.query('SELECT * FROM numero_telefones');
     const [operadoras]= await pool.query('SELECT * FROM operadoras');
     const [usuarios]  = await pool.query('SELECT id,username,nome,senha_hash,role,permissoes,ativo,criado_em FROM usuarios');
     const [config]    = await pool.query('SELECT * FROM configuracoes WHERE chave != \'app_logo\'');
@@ -1087,10 +1070,10 @@ app.get('/api/backup', requireAuth, async (req, res) => {
     portaDocs.forEach(d => { if (d.conteudo) d.conteudo = d.conteudo.toString('base64'); });
 
     const backup = {
-      versao: '2.0',
+      versao: '2.3',
       gerado_em: new Date().toISOString(),
       sistema: 'VoipFlow',
-      dados: { numeros, telefones, operadoras, usuarios, config, portabilidade: porta, portabilidade_docs: portaDocs, historico }
+      dados: { numeros, operadoras, usuarios, config, portabilidade: porta, portabilidade_docs: portaDocs, historico }
     };
 
     const jsonStr = JSON.stringify(backup);
@@ -1126,7 +1109,7 @@ app.post('/api/restore', requireAuth, uploadMem.single('backup'), async (req, re
     try {
       // Limpar tabelas
       await conn.query('SET FOREIGN_KEY_CHECKS=0');
-      for (const t of ['historico','portabilidade_docs','portabilidade','numero_telefones','numeros','operadoras','configuracoes']) {
+      for (const t of ['historico','portabilidade_docs','portabilidade','numeros','operadoras','configuracoes']) {
         await conn.query(`DELETE FROM ${t}`).catch(()=>{});
       }
       await conn.query('SET FOREIGN_KEY_CHECKS=1');
@@ -1152,8 +1135,7 @@ app.post('/api/restore', requireAuth, uploadMem.single('backup'), async (req, re
       };
 
       await insert('operadoras', d.operadoras, ['nome']);
-      await insert('numeros', d.numeros, ['id','empresa','operadora','servidor','status','contrato','obs','criado_em']);
-      await insert('numero_telefones', d.telefones, ['id','numero_id','telefone']);
+      await insert('numeros', d.numeros, ['id','empresa','telefone','operadora','servidor','status','contrato','obs','criado_em','atualizado_em']);
       // Não restaurar usuários para não perder o admin atual
       if (d.config) for (const c of d.config) {
         await conn.query('INSERT INTO configuracoes (chave,valor) VALUES (?,?) ON DUPLICATE KEY UPDATE valor=?', [c.chave,c.valor,c.valor]);

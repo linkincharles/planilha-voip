@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE TABLE IF NOT EXISTS numeros (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   empresa       VARCHAR(255) NOT NULL,
+  telefone      VARCHAR(30) NOT NULL,
   operadora     VARCHAR(100),
   servidor      VARCHAR(100),
   status        ENUM('Ativo','Inativo','Pendente') NOT NULL DEFAULT 'Ativo',
@@ -31,14 +32,8 @@ CREATE TABLE IF NOT EXISTS numeros (
   obs           TEXT,
   data_ativacao DATE,
   criado_em     DATETIME DEFAULT CURRENT_TIMESTAMP,
-  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS numero_telefones (
-  id        INT AUTO_INCREMENT PRIMARY KEY,
-  numero_id INT NOT NULL,
-  telefone  VARCHAR(30) NOT NULL,
-  FOREIGN KEY (numero_id) REFERENCES numeros(id) ON DELETE CASCADE
+  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unq_telefone (telefone)
 );
 
 CREATE TABLE IF NOT EXISTS historico (
