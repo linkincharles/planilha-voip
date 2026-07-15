@@ -18,9 +18,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   criado_em     DATETIME DEFAULT CURRENT_TIMESTAMP,
   ultimo_acesso DATETIME
 );
--- admin / admin123
-INSERT IGNORE INTO usuarios (username, nome, senha_hash, role) VALUES
-  ('admin','Administrador','$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKwo8azTK','admin');
+-- O usuário admin é criado em runtime pelo backend (ensureAdminUser),
+-- com hash bcrypt correto de 'admin123'. Não insira hash hardcoded aqui.
 
 CREATE TABLE IF NOT EXISTS numeros (
   id            INT AUTO_INCREMENT PRIMARY KEY,
