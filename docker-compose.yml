@@ -20,7 +20,7 @@ services:
       start_period: 60s
 
   backend:
-    build: ./backend
+    image: planilha-voip-backend:local
     container_name: telecrm_api
     restart: unless-stopped
     environment:

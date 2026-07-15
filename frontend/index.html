@@ -4,24 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TeleCRM</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0d0f14;--surface:#161921;--surface2:#1e2230;--border:#2a2f42;--accent:#00e5a0;--accent2:#0099ff;--danger:#ff4560;--warn:#ffb800;--text:#e8eaf0;--muted:#6b7280;--green:#00c47a;--purple:#a78bfa;}
+  /* Design system aplicado (ui-ux-pro-max): dark + verde, Fira Code/Sans, density alto */
+  :root{
+    --bg:#020617;--surface:#0F172A;--surface2:#1E293B;--border:#334155;
+    --accent:#22C55E;--accent2:#38BDF8;--danger:#EF4444;--warn:#F59E0B;
+    --text:#F8FAFC;--muted:#94A3B8;--green:#22C55E;--purple:#A78BFA;
+    --space-xs:2px;--space-sm:4px;--space-md:8px;--space-lg:12px;--space-xl:16px;--space-2xl:24px;
+    --shadow-md:0 4px 6px rgba(0,0,0,.1);--shadow-lg:0 10px 15px rgba(0,0,0,.1);--shadow-xl:0 20px 25px rgba(0,0,0,.15);
+  }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  body{font-family:'Fira Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  /* foco visível p/ a11y (checklist da skill) */
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  a,button,[onclick],.nav-tab,.filter-btn,.btn,.row-btn,.perm-item,.close-btn,.drop-zone,.logo-preview{cursor:pointer;}
+  /* respeita prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
 
   /* LOGIN */
   #loginScreen{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:var(--bg);}
   .login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:380px;max-width:95vw;text-align:center;position:relative;z-index:1;}
   .login-logo-img{max-height:60px;max-width:220px;object-fit:contain;margin-bottom:10px;display:none;}
-  .login-logo{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;margin-bottom:4px;}
+  .login-logo{font-family:'Fira Code',monospace;font-size:28px;font-weight:700;margin-bottom:4px;}
   .login-sub{color:var(--muted);font-size:13px;margin-bottom:28px;}
   .login-field{display:flex;flex-direction:column;gap:6px;text-align:left;margin-bottom:14px;}
   .login-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
-  .login-field input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+  .login-field input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
   .login-field input:focus{border-color:var(--accent);}
-  .login-btn{width:100%;background:var(--accent);border:none;color:#0d0f14;padding:12px;border-radius:8px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:all .15s;}
+  .login-btn{width:100%;background:var(--accent);border:none;color:#0d0f14;padding:12px;border-radius:8px;font-family:'Fira Sans',system-ui,sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:all .15s;}
   .login-btn:hover{background:#00ffb3;}
   .login-btn:disabled{opacity:.5;cursor:not-allowed;}
   .login-error{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.3);border-radius:8px;padding:10px;color:var(--danger);font-size:12px;margin-bottom:12px;display:none;}
@@ -30,10 +44,10 @@
   #app{position:relative;z-index:1;display:none;}
   header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
   .header-logo-img{height:32px;object-fit:contain;display:none;}
-  .logo{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);}
+  .logo{font-family:'Fira Code',monospace;font-weight:700;font-size:18px;color:var(--accent);}
   .logo span{color:var(--text);}
   .nav-tabs{display:flex;gap:4px;margin-left:16px;}
-  .nav-tab{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+  .nav-tab{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
   .nav-tab:hover{color:var(--text);}
   .nav-tab.active{background:rgba(0,229,160,.1);color:var(--accent);}
   .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
@@ -41,9 +55,9 @@
   .badge{background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;}
   .badge.admin{background:rgba(167,139,250,.1);color:var(--purple);border-color:rgba(167,139,250,.2);}
   .header-stats{display:flex;gap:16px;}
-  .stat-chip{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .stat-chip{font-size:12px;color:var(--muted);font-family:'Fira Code',monospace;}
   .stat-chip strong{color:var(--accent);font-size:15px;}
-  .btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--muted);font-size:12px;font-family:'Sora',sans-serif;cursor:pointer;transition:all .15s;}
+  .btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--muted);font-size:12px;font-family:'Fira Sans',system-ui,sans-serif;cursor:pointer;transition:all .15s;}
   .btn-logout:hover{border-color:var(--danger);color:var(--danger);}
 
   /* PAGES */
@@ -51,9 +65,9 @@
 
   /* TOOLBAR */
   .toolbar{padding:20px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:none;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:none;font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
   .btn-add{background:var(--accent);color:#0d0f14;}
-  .btn-add:hover{background:#00ffb3;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,229,160,.3);}
+  .btn-add:hover{background:#16A34A;transform:translateY(-1px);box-shadow:0 4px 20px rgba(34,197,94,.3);}
   .btn-remove{background:var(--danger);color:#fff;}
   .btn-remove:hover{background:#ff6b80;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
@@ -65,13 +79,13 @@
   .btn-csv{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
   .btn-csv:hover{border-color:var(--green);color:var(--green);}
   .search-wrap{margin-left:auto;position:relative;}
-  .search-wrap input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 14px 9px 36px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;width:260px;outline:none;transition:border-color .2s;}
+  .search-wrap input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 14px 9px 36px;color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;width:260px;outline:none;transition:border-color .2s;}
   .search-wrap input:focus{border-color:var(--accent2);}
   .search-wrap input::placeholder{color:var(--muted);}
   .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
 
   .filters{padding:0 32px 16px;display:flex;gap:10px;flex-wrap:wrap;}
-  .filter-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-family:'Sora',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;}
+  .filter-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-family:'Fira Sans',system-ui,sans-serif;font-weight:500;cursor:pointer;transition:all .15s;}
   .filter-btn.active,.filter-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.07);}
 
   .table-wrap{padding:0 32px 24px;overflow-x:auto;}
@@ -80,15 +94,15 @@
   tbody tr{border-bottom:1px solid rgba(42,47,66,.5);transition:background .12s;}
   tbody tr:hover{background:rgba(255,255,255,.03);}
   tbody td{padding:12px 14px;vertical-align:middle;}
-  .id-cell{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);}
+  .id-cell{font-family:'Fira Code',monospace;font-size:12px;color:var(--muted);}
   .company-cell{font-weight:500;color:var(--accent2);max-width:260px;}
   .company-link{color:var(--accent2);text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:5px;}
   .company-link:hover{color:var(--accent);text-decoration:underline;}
   .company-link .link-icon{font-size:11px;opacity:.6;flex-shrink:0;}
   .num-pill{display:inline-block;background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.15);border-radius:4px;padding:2px 7px;margin:1px 2px;font-size:11.5px;}
-  .op-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(0,153,255,.12);color:var(--accent2);border:1px solid rgba(0,153,255,.2);font-family:'Space Mono',monospace;}
-  .server-cell{font-family:'Space Mono',monospace;font-size:12px;color:var(--warn);}
-  .server-link{font-family:'Space Mono',monospace;font-size:12px;color:var(--warn);text-decoration:none;}
+  .op-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(0,153,255,.12);color:var(--accent2);border:1px solid rgba(0,153,255,.2);font-family:'Fira Code',monospace;}
+  .server-cell{font-family:'Fira Code',monospace;font-size:12px;color:var(--warn);}
+  .server-link{font-family:'Fira Code',monospace;font-size:12px;color:var(--warn);text-decoration:none;}
   .server-link:hover{color:var(--accent);text-decoration:underline;}
   .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
   .status-badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;}
@@ -100,11 +114,11 @@
   .status-pendente::before{background:var(--warn);}
   .cb{width:40px;}
   input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
-  .result-count{padding:0 32px 10px;font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .result-count{padding:0 32px 10px;font-size:12px;color:var(--muted);font-family:'Fira Code',monospace;}
   .empty-state{text-align:center;padding:60px;color:var(--muted);}
   .empty-state .icon{font-size:40px;margin-bottom:12px;}
   .row-actions{display:flex;gap:6px;}
-  .row-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .12s;font-family:'Sora',sans-serif;}
+  .row-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .12s;font-family:'Fira Sans',system-ui,sans-serif;}
   .row-btn:hover{border-color:var(--accent2);color:var(--accent2);}
   .row-btn.del:hover{border-color:var(--danger);color:var(--danger);}
   .sortable{cursor:pointer;user-select:none;}
@@ -113,21 +127,21 @@
   .sortable.desc{color:var(--accent);}
   .sort-icon{font-size:10px;opacity:.6;}
   .pagination{display:flex;align-items:center;gap:8px;padding:0 32px 24px;font-size:12px;color:var(--muted);}
-  .pg-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;}
+  .pg-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;font-size:12px;cursor:pointer;}
   .pg-btn:hover{border-color:var(--accent2);}
   .pg-btn:disabled{opacity:.4;cursor:not-allowed;}
 
   /* HISTORICO */
   .page-header{padding:24px 32px 0;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;}
   .page-header .dot{width:8px;height:8px;border-radius:50%;}
-  .acao-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;font-family:'Space Mono',monospace;text-transform:uppercase;}
+  .acao-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;font-family:'Fira Code',monospace;text-transform:uppercase;}
   .acao-CRIAR{background:rgba(0,196,122,.12);color:var(--green);}
   .acao-EDITAR{background:rgba(0,153,255,.12);color:var(--accent2);}
   .acao-REMOVER,.acao-REMOVER_LOTE{background:rgba(255,69,96,.1);color:var(--danger);}
   .acao-EXPORTAR_EXCEL,.acao-EXPORTAR_CSV{background:rgba(255,184,0,.1);color:var(--warn);}
   .acao-IMPORTAR_CSV,.acao-CONFIG{background:rgba(167,139,250,.1);color:var(--purple);}
   .acao-default{background:rgba(107,114,128,.1);color:var(--muted);}
-  .det-cell{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .det-cell{font-size:11px;color:var(--muted);font-family:'Fira Code',monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   /* USUARIOS */
   .users-grid{padding:20px 32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;}
@@ -135,7 +149,7 @@
   .user-card-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
   .user-avatar{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;}
   .user-info .name{font-weight:600;font-size:14px;}
-  .user-info .uname{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .user-info .uname{font-size:12px;color:var(--muted);font-family:'Fira Code',monospace;}
   .role-badge{padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:700;}
   .role-admin{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.2);}
   .role-operador{background:rgba(0,153,255,.1);color:var(--accent2);border:1px solid rgba(0,153,255,.2);}
@@ -149,7 +163,7 @@
   .config-row{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
   .config-row:last-child{margin-bottom:0;}
   .config-row label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
-  .config-row input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+  .config-row input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
   .config-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08);}
   .logo-preview-wrap{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
   .logo-preview{width:120px;height:60px;background:var(--surface2);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:border-color .2s;}
@@ -158,8 +172,8 @@
   .logo-preview .placeholder{color:var(--muted);font-size:12px;text-align:center;padding:8px;}
   .logo-actions{display:flex;flex-direction:column;gap:8px;}
   .preview-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;gap:12px;margin-top:16px;}
-  .preview-box-label{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px;}
-  .preview-app-logo{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);}
+  .preview-box-label{font-size:11px;color:var(--muted);font-family:'Fira Code',monospace;margin-bottom:8px;}
+  .preview-app-logo{font-family:'Fira Code',monospace;font-weight:700;font-size:18px;color:var(--accent);}
   .preview-app-logo span{color:var(--text);}
 
   /* MODAIS */
@@ -174,18 +188,18 @@
   .form-group{display:flex;flex-direction:column;gap:6px;}
   .form-group.full{grid-column:1/-1;}
   .form-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
-  .form-group input,.form-group select,.form-group textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+  .form-group input,.form-group select,.form-group textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;outline:none;transition:border-color .2s;width:100%;}
   .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08);}
   .form-group select option{background:var(--surface2);}
   .form-group textarea{resize:vertical;min-height:70px;}
   .form-hint{font-size:11px;color:var(--muted);margin-top:2px;}
   .tags-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:32px;}
-  .num-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);border-radius:6px;padding:3px 9px;font-size:12px;font-family:'Space Mono',monospace;color:var(--accent);}
+  .num-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);border-radius:6px;padding:3px 9px;font-size:12px;font-family:'Fira Code',monospace;color:var(--accent);}
   .num-tag button{background:none;border:none;cursor:pointer;color:var(--danger);font-size:14px;line-height:1;padding:0;}
   .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
-  .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 20px;border-radius:8px;font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+  .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 20px;border-radius:8px;font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
   .btn-cancel:hover{border-color:var(--muted);color:var(--text);}
-  .btn-save{background:var(--accent);border:none;color:#0d0f14;padding:9px 24px;border-radius:8px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+  .btn-save{background:var(--accent);border:none;color:#0d0f14;padding:9px 24px;border-radius:8px;font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
   .btn-save:hover{background:#00ffb3;}
   .btn-save:disabled{opacity:.5;cursor:not-allowed;}
   .close-btn{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
@@ -234,7 +248,7 @@
   .drop-doc-zone:hover,.drop-doc-zone.drag-over{border-color:var(--accent);background:rgba(0,229,160,.04);}
   .porta-stats{display:flex;gap:12px;padding:0 32px 16px;flex-wrap:wrap;}
   .porta-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:8px;}
-  .porta-stat strong{font-size:16px;font-family:'Space Mono',monospace;}
+  .porta-stat strong{font-size:16px;font-family:'Fira Code',monospace;}
   @media(max-width:700px){
     .toolbar,.filters,.table-wrap,.result-count,.page-header,.users-grid,.config-wrap,.pagination{padding-left:16px;padding-right:16px;}
     header{padding:0 16px;}
@@ -266,13 +280,13 @@
     <img class="header-logo-img" id="headerLogoImg" src="" alt="">
     <div class="logo" id="headerLogoText"><span id="headerNome1" style="color:var(--accent)">Tele</span><span id="headerNome2">CRM</span></div>
     <div class="nav-tabs">
-      <button class="nav-tab" onclick="showPage('dashboard',this)">📊 Dashboard</button>
-      <button class="nav-tab active" onclick="showPage('numeros',this)">📋 Números</button>
-      <button class="nav-tab" onclick="showPage('historico',this)">📜 Histórico</button>
-      <button class="nav-tab" id="tabPorta" onclick="showPage('porta',this)">📋 Portabilidade</button>
-      <button class="nav-tab" id="tabConsOp" onclick="showPage('consop',this)">🔍 Consulta Operadora</button>
-      <button class="nav-tab" id="tabUsuarios" onclick="showPage('usuarios',this)" style="display:none">👥 Usuários</button>
-      <button class="nav-tab" id="tabConfig" onclick="showPage('config',this)" style="display:none">⚙️ Configurações</button>
+      <button class="nav-tab" onclick="showPage('dashboard',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> Dashboard</button>
+      <button class="nav-tab active" onclick="showPage('numeros',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg> Números</button>
+      <button class="nav-tab" onclick="showPage('historico',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg> Histórico</button>
+      <button class="nav-tab" id="tabPorta" onclick="showPage('porta',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h11M4 12h11M4 17h7"/><path d="M15 4l5 5-5 5"/></svg> Portabilidade</button>
+      <button class="nav-tab" id="tabConsOp" onclick="showPage('consop',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Consulta Operadora</button>
+      <button class="nav-tab" id="tabUsuarios" onclick="showPage('usuarios',this)" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5a3.5 3.5 0 0 1 0 6"/><path d="M18 20a6 6 0 0 0-3-5.2"/></svg> Usuários</button>
+      <button class="nav-tab" id="tabConfig" onclick="showPage('config',this)" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg> Configurações</button>
     </div>
     <div class="header-right">
       <div class="header-stats">
@@ -290,40 +304,40 @@
     <div class="page-header"><div class="dot" style="background:var(--accent)"></div>Dashboard</div>
     <div style="padding:20px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
       <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:all .2s">
-        <div style="font-size:32px;margin-bottom:4px">📱</div>
-        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace" id="dashTotal">—</div>
+        <div style="font-size:32px;margin-bottom:4px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
+        <div style="font-size:36px;font-weight:700;font-family:'Fira Code',monospace" id="dashTotal">—</div>
         <div style="color:var(--muted);font-size:12px;margin-top:4px">Total de Números</div>
       </div>
       <div class="stat-card active" style="background:var(--surface);border:1px solid var(--green);border-radius:16px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:4px">✅</div>
-        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--green)" id="dashAtivos">—</div>
+        <div style="font-size:32px;margin-bottom:4px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div>
+        <div style="font-size:36px;font-weight:700;font-family:'Fira Code',monospace;color:var(--green)" id="dashAtivos">—</div>
         <div style="color:var(--muted);font-size:12px;margin-top:4px">Ativos</div>
       </div>
       <div class="stat-card inactive" style="background:var(--surface);border:1px solid var(--danger);border-radius:16px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:4px">❌</div>
-        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--danger)" id="dashInativos">—</div>
+        <div style="font-size:32px;margin-bottom:4px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg></div>
+        <div style="font-size:36px;font-weight:700;font-family:'Fira Code',monospace;color:var(--danger)" id="dashInativos">—</div>
         <div style="color:var(--muted);font-size:12px;margin-top:4px">Inativos</div>
       </div>
       <div class="stat-card pending" style="background:var(--surface);border:1px solid var(--warn);border-radius:16px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:4px">⏳</div>
-        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--warn)" id="dashPendentes">—</div>
+        <div style="font-size:32px;margin-bottom:4px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div style="font-size:36px;font-weight:700;font-family:'Fira Code',monospace;color:var(--warn)" id="dashPendentes">—</div>
         <div style="color:var(--muted);font-size:12px;margin-top:4px">Pendentes</div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--accent2);border-radius:16px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:4px">📅</div>
-        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--accent2)" id="dashEsteMes">—</div>
+        <div style="font-size:32px;margin-bottom:4px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+        <div style="font-size:36px;font-weight:700;font-family:'Fira Code',monospace;color:var(--accent2)" id="dashEsteMes">—</div>
         <div style="color:var(--muted);font-size:12px;margin-top:4px">Este Mês</div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--purple);border-radius:16px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:4px">📆</div>
-        <div style="font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--purple)" id="dashUltimos30">—</div>
+        <div style="font-size:32px;margin-bottom:4px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M3 14h18"/></svg></div>
+        <div style="font-size:36px;font-weight:700;font-family:'Fira Code',monospace;color:var(--purple)" id="dashUltimos30">—</div>
         <div style="color:var(--muted);font-size:12px;margin-top:4px">Últimos 30 dias</div>
       </div>
     </div>
 
     <div style="padding:0 32px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
-        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent2)">📊 Por Operadora</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent2);display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> Por Operadora</div>
         <div id="dashPorOperadora"></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
@@ -331,13 +345,13 @@
         <div id="dashPorServidor"></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
-        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--purple)">🔄 Portabilidade</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--purple);display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h11M4 12h11M4 17h7"/><path d="M15 4l5 5-5 5"/></svg> Portabilidade</div>
         <div style="display:flex;flex-direction:column;gap:12px" id="dashPortaStats"></div>
       </div>
     </div>
 
     <div style="padding:0 32px 24px">
-      <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent)">🕐 Recentes</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent);display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Recentes</div>
       <div class="table-wrap" style="padding:0">
         <table>
           <thead><tr><th>ID</th><th>Empresa</th><th>Status</th><th>Criado em</th></tr></thead>
@@ -350,29 +364,29 @@
   <!-- NÚMEROS -->
   <div class="page active" id="pageNumeros">
     <div class="toolbar">
-      <button class="btn btn-add" onclick="openModal()">＋ Novo Número</button>
-      <button class="btn btn-remove" onclick="removeSelected()">🗑 Remover</button>
-      <button class="btn btn-secondary" onclick="editSelected()">✏️ Editar</button>
-      <button class="btn btn-warn" onclick="openOpsModal()">⚙️ Operadoras</button>
-      <button class="btn btn-secondary" onclick="openImportModal()">📥 Importar CSV</button>
+      <button class="btn btn-add" onclick="openModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Novo Número</button>
+      <button class="btn btn-remove" onclick="removeSelected()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Remover</button>
+      <button class="btn btn-secondary" onclick="editSelected()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Editar</button>
+      <button class="btn btn-warn" onclick="openOpsModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg> Operadoras</button>
+      <button class="btn btn-secondary" onclick="openImportModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Importar CSV</button>
       <div style="position:relative;display:inline-block">
-        <button class="btn btn-excel" onclick="toggleExportMenu(event)">📊 Exportar ▾</button>
+        <button class="btn btn-excel" onclick="toggleExportMenu(event)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Exportar ▾</button>
         <div id="exportMenu" style="display:none;position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;z-index:200;margin-top:4px;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,.3)">
           <div style="padding:4px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Excel</div>
-          <div onclick="exportExcel();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)">📱 Números</div>
-          <div onclick="exportPortaExcel();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;color:var(--accent2);margin-bottom:8px">📱 Portabilidade</div>
+          <div onclick="exportExcel();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)">Excel — Números</div>
+          <div onclick="exportPortaExcel();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;color:var(--accent2);margin-bottom:8px">Excel — Portabilidade</div>
           <div style="padding:4px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CSV</div>
-          <div onclick="exportCsv();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)">📄 Números</div>
-          <div onclick="exportPortaCsv();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px">📄 Portabilidade</div>
+          <div onclick="exportCsv();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)">CSV — Números</div>
+          <div onclick="exportPortaCsv();closeExportMenu()" style="padding:8px 12px;cursor:pointer;font-size:12px">CSV — Portabilidade</div>
         </div>
       </div>
-      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Empresa, número, IP..." oninput="debounceLoad()"></div>
+      <div class="search-wrap"><span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><input type="text" id="searchInput" placeholder="Empresa, número, IP..." oninput="debounceLoad()"></div>
     </div>
     <div class="filters">
       <button class="filter-btn active" onclick="setFilter('todos',this)">Todos</button>
-      <button class="filter-btn" onclick="setFilter('Ativo',this)">✅ Ativos</button>
-      <button class="filter-btn" onclick="setFilter('Inativo',this)">❌ Inativos</button>
-      <button class="filter-btn" onclick="setFilter('Pendente',this)">⏳ Pendentes</button>
+      <button class="filter-btn" onclick="setFilter('Ativo',this)">Ativos</button>
+      <button class="filter-btn" onclick="setFilter('Inativo',this)">Inativos</button>
+      <button class="filter-btn" onclick="setFilter('Pendente',this)">Pendentes</button>
       <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
         <span style="color:var(--muted);font-size:12px">De:</span>
         <input type="date" id="dateFrom" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px" onchange="debounceLoad()">
@@ -395,9 +409,9 @@
   <div class="page" id="pagePorta">
     <div class="page-header"><div class="dot" style="background:var(--accent2)"></div>Pedidos de Portabilidade</div>
     <div class="toolbar" style="padding-top:16px">
-      <button class="btn btn-add" id="btnNovoPorta" onclick="openPortaModal()">＋ Novo Pedido</button>
-      <button class="btn btn-excel" onclick="exportPortaExcel()">📊 Excel</button>
-      <button class="btn btn-csv" onclick="exportPortaCsv()">📄 CSV</button>
+      <button class="btn btn-add" id="btnNovoPorta" onclick="openPortaModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Novo Pedido</button>
+      <button class="btn btn-excel" onclick="exportPortaExcel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Excel</button>
+      <button class="btn btn-csv" onclick="exportPortaCsv()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> CSV</button>
       <select id="portaFiltroStatus" class="btn btn-secondary" style="padding:8px 12px;cursor:pointer" onchange="loadPorta()">
         <option value="todos">Todos os status</option>
         <option value="Aberto">Aberto</option>
@@ -406,7 +420,7 @@
         <option value="Concluido">Concluído</option>
         <option value="Cancelado">Cancelado</option>
       </select>
-      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="portaSearch" placeholder="Empresa, CPF, protocolo..." oninput="debouncePorta()"></div>
+      <div class="search-wrap"><span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><input type="text" id="portaSearch" placeholder="Empresa, CPF, protocolo..." oninput="debouncePorta()"></div>
     </div>
     <div class="porta-stats" id="portaStats"></div>
     <div class="result-count" id="portaCount">Carregando...</div>
@@ -415,7 +429,7 @@
         <thead><tr><th>ID</th><th>Empresa</th><th>Titular / Doc</th><th>Números</th><th>Origem → Destino</th><th>Protocolo</th><th>Status</th><th>Abertura</th><th>Docs</th><th>Ações</th></tr></thead>
         <tbody id="tbodyPorta"></tbody>
       </table>
-      <div id="emptyPorta" class="empty-state" style="display:none"><div class="icon">📋</div><p>Nenhum pedido encontrado.</p></div>
+      <div id="emptyPorta" class="empty-state" style="display:none"><div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><p>Nenhum pedido encontrado.</p></div>
     </div>
     <div class="pagination" id="paginacaoPorta"></div>
   </div>
@@ -431,10 +445,10 @@
     <div class="toolbar" style="padding-top:16px;flex-wrap:wrap;gap:12px">
       <div style="display:flex;gap:8px;flex:1;max-width:400px">
         <input type="text" id="consOpNum" placeholder="Digite o número com DDD" style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" maxlength="11" onkeydown="if(event.key==='Enter')consultarOperadoraRapido()">
-        <button class="btn btn-add" onclick="consultarOperadoraRapido()">🔍 Consultar</button>
+        <button class="btn btn-add" onclick="consultarOperadoraRapido()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Consultar</button>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="document.getElementById('consOpNum').value='';document.getElementById('consOpResult').style.display='none'">🗑 Limpar</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('consOpNum').value='';document.getElementById('consOpResult').style.display='none'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Limpar</button>
       </div>
     </div>
     <div id="consOpResult" style="display:none;padding:24px 32px">
@@ -483,7 +497,7 @@
         <option value="numero">Números</option><option value="usuario">Usuários</option>
         <option value="operadora">Operadoras</option><option value="sistema">Sistema</option>
       </select>
-      <button class="btn btn-secondary" onclick="loadHistorico()">🔄 Atualizar</button>
+      <button class="btn btn-secondary" onclick="loadHistorico()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg> Atualizar</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -498,7 +512,7 @@
   <!-- USUÁRIOS -->
   <div class="page" id="pageUsuarios">
     <div class="page-header"><div class="dot" style="background:var(--accent2)"></div>Gerenciar Usuários</div>
-    <div class="toolbar" style="padding-top:16px"><button class="btn btn-add" onclick="openUserModal()">＋ Novo Usuário</button></div>
+    <div class="toolbar" style="padding-top:16px"><button class="btn btn-add" onclick="openUserModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Novo Usuário</button></div>
     <div class="users-grid" id="usersGrid"></div>
   </div>
 
@@ -525,7 +539,7 @@
             <div class="preview-app-logo" id="previewLogoText"><span id="prevNome1" style="color:var(--accent)">Tele</span><span id="prevNome2">CRM</span></div>
           </div>
         </div>
-        <button class="btn btn-add" onclick="saveConfig()">💾 Salvar Nome</button>
+        <button class="btn btn-add" onclick="saveConfig()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar Nome</button>
       </div>
 
       <!-- Logo -->
@@ -534,12 +548,12 @@
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Faça upload de uma imagem PNG, JPG ou SVG. Recomendado: fundo transparente, até 2MB.</p>
         <div class="logo-preview-wrap">
           <div class="logo-preview" id="logoPreview" onclick="document.getElementById('logoFile').click()">
-            <div class="placeholder" id="logoPlaceholder">🖼️<br>Clique para<br>selecionar</div>
+            <div class="placeholder" id="logoPlaceholder"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg><br>Clique para<br>selecionar</div>
             <img id="logoPreviewImg" src="" style="display:none">
           </div>
           <div class="logo-actions">
-            <button class="btn btn-add" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('logoFile').click()">📁 Escolher imagem</button>
-            <button class="btn btn-remove" style="font-size:12px;padding:8px 14px" onclick="removeLogo()">🗑 Remover logo</button>
+            <button class="btn btn-add" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('logoFile').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Escolher imagem</button>
+            <button class="btn btn-remove" style="font-size:12px;padding:8px 14px" onclick="removeLogo()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Remover logo</button>
           </div>
         </div>
         <input type="file" id="logoFile" accept="image/*" style="display:none" onchange="handleLogoFile(this)">
@@ -550,16 +564,16 @@
             <div class="preview-app-logo" id="previewLogoTextFallback"><span style="color:var(--accent)" id="prevNome1b">Tele</span><span id="prevNome2b">CRM</span></div>
           </div>
         </div>
-        <button class="btn btn-excel" style="font-size:13px" id="btnUploadLogo" onclick="uploadLogo()" disabled>⬆️ Fazer Upload da Logo</button>
+        <button class="btn btn-excel" style="font-size:13px" id="btnUploadLogo" onclick="uploadLogo()" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V7"/><path d="m7 12 5-5 5 5"/><path d="M5 21h14"/></svg> Fazer Upload da Logo</button>
       </div>
 
       <!-- Backup & Restore -->
       <div class="config-section">
-        <h3><div class="dot" style="background:#a78bfa"></div>💾 Backup & Restauração</h3>
+        <h3><div class="dot" style="background:#a78bfa"></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Backup &amp; Restauração</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Exporta todos os dados (números, portabilidades, documentos, configurações) em um arquivo JSON. Para restaurar, importe o arquivo gerado.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-add" onclick="downloadBackup()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.4);color:#a78bfa">⬇️ Baixar Backup</button>
-          <button class="btn btn-secondary" onclick="document.getElementById('restoreFileInput').click()" style="background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);color:#f59e0b">⬆️ Restaurar Backup</button>
+          <button class="btn btn-add" onclick="downloadBackup()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.4);color:#a78bfa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Baixar Backup</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('restoreFileInput').click()" style="background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);color:#f59e0b"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V7"/><path d="m7 12 5-5 5 5"/><path d="M5 21h14"/></svg> Restaurar Backup</button>
           <input type="file" id="restoreFileInput" accept=".json,.json.gz,application/gzip" style="display:none" onchange="uploadRestore(this)">
         </div>
         <div id="backupStatus" style="margin-top:12px;font-size:12px;color:var(--muted)"></div>
@@ -573,17 +587,17 @@
         </p>
         <div class="config-row">
           <label>URL do Webhook</label>
-          <input type="url" id="cfgWebhook" placeholder="https://hooks.zapier.com/..." style="font-family:'Space Mono',monospace;font-size:12px;">
+          <input type="url" id="cfgWebhook" placeholder="https://hooks.zapier.com/..." style="font-family:'Fira Code',monospace;font-size:12px;">
         </div>
         <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
-          <button class="btn btn-add" onclick="saveWebhook()" style="font-size:12px;padding:8px 16px">💾 Salvar URL</button>
-          <button class="btn btn-secondary" onclick="testWebhook()" id="btnTestWebhook" style="font-size:12px;padding:8px 16px">🧪 Testar agora</button>
-          <button class="btn btn-remove" onclick="removeWebhook()" style="font-size:12px;padding:8px 16px">🗑 Remover</button>
+          <button class="btn btn-add" onclick="saveWebhook()" style="font-size:12px;padding:8px 16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar URL</button>
+          <button class="btn btn-secondary" onclick="testWebhook()" id="btnTestWebhook" style="font-size:12px;padding:8px 16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2v11h3v9l7-12h-3l3-8z"/></svg> Testar agora</button>
+          <button class="btn btn-remove" onclick="removeWebhook()" style="font-size:12px;padding:8px 16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Remover</button>
         </div>
         <div id="webhookStatus" style="margin-top:12px;font-size:12px;display:none"></div>
         <div style="margin-top:16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Payload de exemplo enviado</div>
-          <pre style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.6;overflow-x:auto">{
+          <pre style="font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);line-height:1.6;overflow-x:auto">{
   "evento":      "CRIAR",
   "entidade":    "numero",
   "entidade_id": 42,
@@ -611,7 +625,7 @@
         <div class="config-row"><label>URL da API</label><input type="text" id="cfgApiConsOpUrl" placeholder="http://10.5.24.190:9001/src/api.php"></div>
         <div class="config-row"><label>Login</label><input type="text" id="cfgApiConsOpLogin" placeholder="admin"></div>
         <div class="config-row"><label>Senha</label><input type="password" id="cfgApiConsOpSenha" placeholder="123"></div>
-        <button class="btn btn-add" onclick="salvarApiConsulta()" style="margin-top:4px">💾 Salvar Configuração</button>
+        <button class="btn btn-add" onclick="salvarApiConsulta()" style="margin-top:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar Configuração</button>
         <div id="cfgApiConsOpStatus" style="margin-top:8px;font-size:12px"></div>
       </div>
 
@@ -623,7 +637,7 @@
           <label>Número (com DDD)</label>
           <div style="display:flex;gap:8px">
             <input type="text" id="cfgConsOpNum" placeholder="21999998888" maxlength="11" style="flex:1">
-            <button class="btn btn-add" onclick="consultarOperadoraManual()" style="font-size:12px;padding:8px 16px">🔍 Consultar</button>
+            <button class="btn btn-add" onclick="consultarOperadoraManual()" style="font-size:12px;padding:8px 16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Consultar</button>
           </div>
         </div>
         <div id="cfgConsOpResult" style="margin-top:12px;display:none">
@@ -646,7 +660,7 @@
 <!-- MODAL PORTABILIDADE -->
 <div class="overlay" id="overlayPorta" onclick="if(event.target===this)closePortaModal()">
   <div class="modal" style="width:680px;max-height:90vh">
-    <button class="close-btn" onclick="closePortaModal()">✕</button>
+    <button class="close-btn" onclick="closePortaModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="modal-title"><div class="dot" style="background:var(--accent2)"></div><span id="portaModalTitle">Novo Pedido de Portabilidade</span></div>
 
     <div class="form-grid">
@@ -692,7 +706,7 @@
           <option value="Conta de Telefone">Conta de Telefone</option>
           <option value="Outro">Outro</option>
         </select>
-        <button class="btn btn-secondary" onclick="document.getElementById('docFileInput').click()">📎 Anexar documento</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('docFileInput').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Anexar documento</button>
         <input type="file" id="docFileInput" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx" multiple onchange="uploadDocs(this.files)">
       </div>
       <div id="docsList"></div>
@@ -700,7 +714,7 @@
 
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closePortaModal()">Cancelar</button>
-      <button class="btn" id="btnGerarTermo" onclick="gerarTermoPortabilidade()" style="background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:none">🖨 Gerar Termo</button>
+      <button class="btn" id="btnGerarTermo" onclick="gerarTermoPortabilidade()" style="background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Gerar Termo</button>
       <button class="btn-save" id="btnPortaSave" onclick="savePorta()">Salvar Pedido</button>
     </div>
   </div>
@@ -709,12 +723,12 @@
 <!-- MODAL TERMO PORTABILIDADE -->
 <div class="overlay" id="overlayTermo" onclick="if(event.target===this)closeTermoModal()" style="z-index:1100;display:none">
   <div class="modal" style="width:720px;max-height:95vh;overflow-y:auto">
-    <button class="close-btn" onclick="closeTermoModal()">✕</button>
+    <button class="close-btn" onclick="closeTermoModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="modal-title"><div class="dot" style="background:var(--accent2)"></div>Termo de Portabilidade Numérica</div>
     <div id="termoConteudo" style="font-family:'Times New Roman',Times,serif;font-size:14px;line-height:1.7;color:#111;background:#fff;padding:40px 50px;border:1px solid #ddd;border-radius:6px;margin-bottom:16px"></div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeTermoModal()">Fechar</button>
-      <button class="btn-save" onclick="imprimirTermo()">🖨 Imprimir</button>
+      <button class="btn-save" onclick="imprimirTermo()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Imprimir</button>
     </div>
   </div>
 </div>
@@ -722,7 +736,7 @@
 <!-- MODAL NÚMERO -->
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <button class="close-btn" onclick="closeModal()">✕</button>
+    <button class="close-btn" onclick="closeModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="modal-title"><div class="dot"></div><span id="modalTitle">Novo Número</span></div>
     <div class="form-grid">
       <div class="form-group full"><label>Empresa *</label><input type="text" id="fEmpresa" placeholder="Nome da empresa"></div>
@@ -746,10 +760,10 @@
 <!-- MODAL OPERADORAS -->
 <div class="overlay" id="overlayOps" onclick="if(event.target===this)closeOpsModal()">
   <div class="modal sm">
-    <button class="close-btn" onclick="closeOpsModal()">✕</button>
+    <button class="close-btn" onclick="closeOpsModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="modal-title"><div class="dot" style="background:var(--warn)"></div>Gerenciar Operadoras</div>
     <div style="display:flex;gap:8px">
-      <input type="text" id="newOpInput" placeholder="Nova operadora..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;">
+      <input type="text" id="newOpInput" placeholder="Nova operadora..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;font-size:13px;outline:none;">
       <button class="btn-save" style="padding:9px 14px;border-radius:8px;flex-shrink:0" onclick="addOperadora()">Add</button>
     </div>
     <div class="op-list" id="opList"></div>
@@ -759,11 +773,11 @@
 <!-- MODAL IMPORTAR -->
 <div class="overlay" id="overlayImport" onclick="if(event.target===this)closeImportModal()">
   <div class="modal">
-    <button class="close-btn" onclick="closeImportModal()">✕</button>
+    <button class="close-btn" onclick="closeImportModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="modal-title"><div class="dot" style="background:var(--purple)"></div>Importar CSV</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Faça upload de um arquivo CSV.<br><a onclick="downloadTemplate()" style="color:var(--accent);cursor:pointer;text-decoration:underline">📥 Baixar template de exemplo</a></p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Faça upload de um arquivo CSV.<br><a onclick="downloadTemplate()" style="color:var(--accent);cursor:pointer;text-decoration:underline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Baixar template de exemplo</a></p>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFile').click()" ondragover="dzDragOver(event)" ondragleave="dzDragLeave()" ondrop="dzDrop(event)">
-      <div class="dz-icon">📂</div>
+      <div class="dz-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div>
       <p><strong>Clique para selecionar</strong> ou arraste aqui</p>
       <p style="margin-top:4px;font-size:12px">CSV separado por ponto-e-vírgula (;)</p>
     </div>
@@ -776,7 +790,7 @@
 <!-- MODAL USUÁRIO -->
 <div class="overlay" id="overlayUser" onclick="if(event.target===this)closeUserModal()">
   <div class="modal" style="width:520px">
-    <button class="close-btn" onclick="closeUserModal()">✕</button>
+    <button class="close-btn" onclick="closeUserModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="modal-title"><div class="dot" style="background:var(--accent2)"></div><span id="userModalTitle">Novo Usuário</span></div>
     <div class="form-grid" style="grid-template-columns:1fr 1fr">
       <div class="form-group full"><label>Nome *</label><input type="text" id="uNome" placeholder="Nome completo"></div>
@@ -788,8 +802,8 @@
     <div id="permsSection" style="margin-top:16px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px">
         <span>Permissões</span>
-        <button type="button" onclick="toggleAllPerms(true)" style="background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:2px 8px;color:var(--accent);font-size:10px;cursor:pointer;font-family:'Sora',sans-serif">Marcar todas</button>
-        <button type="button" onclick="toggleAllPerms(false)" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'Sora',sans-serif">Desmarcar</button>
+        <button type="button" onclick="toggleAllPerms(true)" style="background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:2px 8px;color:var(--accent);font-size:10px;cursor:pointer;font-family:'Fira Sans',system-ui,sans-serif">Marcar todas</button>
+        <button type="button" onclick="toggleAllPerms(false)" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'Fira Sans',system-ui,sans-serif">Desmarcar</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <label class="perm-item"><input type="checkbox" class="perm-cb" value="ver_numeros"> Ver números</label>
@@ -918,24 +932,24 @@ document.getElementById('cfgNome').addEventListener('input', updatePreview);
 async function saveConfig() {
   const nome = document.getElementById('cfgNome').value.trim();
   const sub  = document.getElementById('cfgSubtitulo').value.trim();
-  if (!nome) { toast('❌ Informe o nome do sistema.',true); return; }
+  if (!nome) { toast('Informe o nome do sistema.',true); return; }
   await api('/config', { method:'PUT', body:{ app_nome:nome, app_subtitulo:sub } });
   await loadConfig();
-  toast('✅ Nome atualizado com sucesso!');
+  toast('Nome atualizado com sucesso!');
 }
 
 async function salvarApiConsulta(){
   const url=document.getElementById('cfgApiConsOpUrl').value.trim();
   const login=document.getElementById('cfgApiConsOpLogin').value.trim();
   const senha=document.getElementById('cfgApiConsOpSenha').value;
-  if(!url){toast('❌ Informe a URL da API',true);return;}
+  if(!url){toast('Informe a URL da API',true);return;}
   const st=document.getElementById('cfgApiConsOpStatus');
   st.textContent='Salvando...';st.style.color='var(--warn)';
   try{
     await api('/config',{method:'PUT',body:{api_consulta_operadora_url:url,api_consulta_operadora_login:login,api_consulta_operadora_senha:senha}});
-    st.textContent='✅ Salvo com sucesso!';st.style.color='var(--green)';
-    toast('✅ Configuração da API salva!');
-  }catch(e){st.textContent='❌ '+e.message;st.style.color='var(--danger)';toast('❌ '+e.message,true);}
+    st.textContent='Salvo com sucesso!';st.style.color='var(--green)';
+    toast('Configuração da API salva!');
+  }catch(e){st.textContent=''+e.message;st.style.color='var(--danger)';toast(''+e.message,true);}
 }
 
 function handleLogoFile(input) {
@@ -961,8 +975,8 @@ async function uploadLogo() {
     logoFilePending = null;
     document.getElementById('btnUploadLogo').disabled = true;
     await loadConfig();
-    toast('✅ Logo atualizada!');
-  } else { toast('❌ ' + (data.error||'Erro'), true); }
+    toast('Logo atualizada!');
+  } else { toast('' + (data.error||'Erro'), true); }
 }
 
 async function removeLogo() {
@@ -975,7 +989,7 @@ async function removeLogo() {
   logoFilePending = null;
   document.getElementById('btnUploadLogo').disabled = true;
   await loadConfig();
-  toast('🗑 Logo removida.');
+  toast('Logo removida.');
 }
 
 // ── WEBHOOK ───────────────────────────────────────────────────────────────────
@@ -988,9 +1002,9 @@ async function loadWebhook() {
 
 async function saveWebhook() {
   const url = document.getElementById('cfgWebhook').value.trim();
-  if (url && !url.startsWith('http')) { toast('❌ URL deve começar com http:// ou https://', true); return; }
+  if (url && !url.startsWith('http')) { toast('URL deve começar com http:// ou https://', true); return; }
   await api('/config/webhook', { method: 'PUT', body: { webhook_url: url } });
-  toast(url ? '✅ Webhook salvo!' : '✅ Webhook removido!');
+  toast(url ? 'Webhook salvo!' : 'Webhook removido!');
   setWebhookStatus('');
 }
 
@@ -998,24 +1012,24 @@ async function removeWebhook() {
   if (!confirm('Remover o webhook?')) return;
   document.getElementById('cfgWebhook').value = '';
   await api('/config/webhook', { method: 'PUT', body: { webhook_url: '' } });
-  toast('🗑 Webhook removido.');
+  toast('Webhook removido.');
   setWebhookStatus('');
 }
 
 async function testWebhook() {
   const url = document.getElementById('cfgWebhook').value.trim();
-  if (!url) { toast('❌ Informe a URL primeiro.', true); return; }
+  if (!url) { toast('Informe a URL primeiro.', true); return; }
   const btn = document.getElementById('btnTestWebhook');
-  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+  btn.disabled = true; btn.textContent = 'Enviando...';
   setWebhookStatus('');
   try {
     const r = await api('/config/webhook/test', { method: 'POST', body: { webhook_url: url } });
-    setWebhookStatus(`✅ Webhook enviado! Servidor respondeu: HTTP ${r.status}`, 'ok');
-    toast('✅ Teste enviado com sucesso!');
+    setWebhookStatus(`Webhook enviado! Servidor respondeu: HTTP ${r.status}`, 'ok');
+    toast('Teste enviado com sucesso!');
   } catch(e) {
-    setWebhookStatus(`❌ Falhou: ${e.message}`, 'err');
-    toast('❌ Erro no teste: ' + e.message, true);
-  } finally { btn.disabled = false; btn.textContent = '🧪 Testar agora'; }
+    setWebhookStatus(`Falhou: ${e.message}`, 'err');
+    toast('Erro no teste: ' + e.message, true);
+  } finally { btn.disabled = false; btn.textContent = 'Testar agora'; }
 }
 
 function setWebhookStatus(msg, type='') {
@@ -1030,19 +1044,19 @@ async function alterarSenha() {
   const atual = document.getElementById('cfgSenhaAtual').value;
   const nova  = document.getElementById('cfgSenhaNova').value;
   const conf  = document.getElementById('cfgSenhaConf').value;
-  if (!atual || !nova) { toast('❌ Preencha todos os campos.',true); return; }
-  if (nova !== conf)   { toast('❌ As senhas não conferem.',true); return; }
-  if (nova.length < 6) { toast('❌ Senha deve ter ao menos 6 caracteres.',true); return; }
+  if (!atual || !nova) { toast('Preencha todos os campos.',true); return; }
+  if (nova !== conf)   { toast('As senhas não conferem.',true); return; }
+  if (nova.length < 6) { toast('Senha deve ter ao menos 6 caracteres.',true); return; }
   try {
     await api('/usuarios/'+currentUser.id, { method:'PUT', body:{ nome:currentUser.nome, role:currentUser.role, ativo:1, password:nova } });
     ['cfgSenhaAtual','cfgSenhaNova','cfgSenhaConf'].forEach(id=>document.getElementById(id).value='');
-    toast('✅ Senha alterada com sucesso!');
-  } catch(e) { toast('❌ '+e.message,true); }
+    toast('Senha alterada com sucesso!');
+  } catch(e) { toast(''+e.message,true); }
 }
 
 async function consultarOperadoraManual(){
   const num = document.getElementById('cfgConsOpNum').value.replace(/\D/g,'');
-  if(num.length<10){toast('❌ Digite um número com DDD (mínimo 10 dígitos)',true);return;}
+  if(num.length<10){toast('Digite um número com DDD (mínimo 10 dígitos)',true);return;}
   const btn = event.target;
   btn.disabled=true;btn.textContent='Consultando...';
   try{
@@ -1055,18 +1069,18 @@ async function consultarOperadoraManual(){
       document.getElementById('resOpEstado').textContent = r.estado || '-';
       document.getElementById('resOpCidade').textContent = r.cidade || '-';
       resDiv.style.display = 'block';
-      toast('✅ Consulta realizada!');
+      toast('Consulta realizada!');
     }else{
       resDiv.style.display = 'none';
-      toast('❌ Número não encontrado',true);
+      toast('Número não encontrado',true);
     }
-  }catch(e){toast('❌ Erro: '+e.message,true);}
-  finally{btn.disabled=false;btn.textContent='🔍 Consultar';}
+  }catch(e){toast('Erro: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Consultar';}
 }
 
 async function consultarOperadoraRapido(){
   const num = document.getElementById('consOpNum').value.replace(/\D/g,'');
-  if(num.length<10){toast('❌ Digite um número com DDD',true);return;}
+  if(num.length<10){toast('Digite um número com DDD',true);return;}
   const btn = event.target;
   btn.disabled=true;btn.textContent='...';
   try{
@@ -1085,10 +1099,10 @@ async function consultarOperadoraRapido(){
       document.getElementById('consOpCount').textContent = 'Consulta realizada para: '+num;
     }else{
       resDiv.style.display = 'none';
-      toast('❌ Número não encontrado',true);
+      toast('Número não encontrado',true);
     }
-  }catch(e){toast('❌ Erro: '+e.message,true);}
-  finally{btn.disabled=false;btn.textContent='🔍 Consultar';}
+  }catch(e){toast('Erro: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Consultar';}
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
@@ -1180,10 +1194,10 @@ function showPage(name, btn) {
   if(pg) pg.classList.add('active');
   if(btn) btn.classList.add('active');
   if(name==='dashboard') loadDashboard();
-  if(name==='porta')     { if(!hasPermission('ver_portabilidade')){toast('❌ Sem permissão.',true);return;} loadPorta(); }
-  if(name==='historico') { if(!hasPermission('ver_historico')){toast('❌ Sem permissão.',true);return;} loadHistorico(); }
-  if(name==='usuarios')  { if(currentUser.role!=='admin'){toast('❌ Sem permissão.',true);return;} loadUsuarios(); }
-  if(name==='config')    { if(currentUser.role!=='admin'){toast('❌ Sem permissão.',true);return;} loadConfig(); loadWebhook(); }
+  if(name==='porta')     { if(!hasPermission('ver_portabilidade')){toast('Sem permissão.',true);return;} loadPorta(); }
+  if(name==='historico') { if(!hasPermission('ver_historico')){toast('Sem permissão.',true);return;} loadHistorico(); }
+  if(name==='usuarios')  { if(currentUser.role!=='admin'){toast('Sem permissão.',true);return;} loadUsuarios(); }
+  if(name==='config')    { if(currentUser.role!=='admin'){toast('Sem permissão.',true);return;} loadConfig(); loadWebhook(); }
   if(name==='consop')    { document.getElementById('consOpNum').focus(); }
 }
 
@@ -1200,7 +1214,7 @@ async function loadDashboard() {
 
     const mkBar = (label, value, color, total) => {
       const pct = total > 0 ? (value / total * 100).toFixed(1) : 0;
-      return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--text)">${label}</span><span style="font-family:'Space Mono',monospace;color:${color}">${value}</span></div><div style="background:var(--surface2);height:6px;border-radius:3px"><div style="background:${color};height:100%;width:${pct}%;border-radius:3px"></div></div></div>`;
+      return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--text)">${label}</span><span style="font-family:'Fira Code',monospace;color:${color}">${value}</span></div><div style="background:var(--surface2);height:6px;border-radius:3px"><div style="background:${color};height:100%;width:${pct}%;border-radius:3px"></div></div></div>`;
     };
 
     const opContainer = document.getElementById('dashPorOperadora');
@@ -1218,10 +1232,10 @@ async function loadDashboard() {
     const portaContainer = document.getElementById('dashPortaStats');
     if(d.portaStats) {
       portaContainer.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Total</span><span style="font-family:'Space Mono',monospace;font-weight:600">${d.portaStats.total||0}</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Pendente</span><span style="font-family:'Space Mono',monospace;font-weight:600;color:var(--warn)">${d.portaStats.pendente||0}</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Concluído</span><span style="font-family:'Space Mono',monospace;font-weight:600;color:var(--green)">${d.portaStats.concluido||0}</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Cancelado</span><span style="font-family:'Space Mono',monospace;font-weight:600;color:var(--danger)">${d.portaStats.cancelado||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Total</span><span style="font-family:'Fira Code',monospace;font-weight:600">${d.portaStats.total||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Pendente</span><span style="font-family:'Fira Code',monospace;font-weight:600;color:var(--warn)">${d.portaStats.pendente||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Concluído</span><span style="font-family:'Fira Code',monospace;font-weight:600;color:var(--green)">${d.portaStats.concluido||0}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:8px"><span style="color:var(--muted);font-size:12px">Cancelado</span><span style="font-family:'Fira Code',monospace;font-weight:600;color:var(--danger)">${d.portaStats.cancelado||0}</span></div>
       `;
     } else { portaContainer.innerHTML = '<div style="color:var(--muted);font-size:12px">Nenhum dado</div>'; }
 
@@ -1229,7 +1243,7 @@ async function loadDashboard() {
     if(d.recentes?.length) {
       recContainer.innerHTML = d.recentes.map(r=>{
         const sc = r.status==='Ativo'?'var(--green)':r.status==='Inativo'?'var(--danger)':'var(--warn)';
-        return `<tr><td class="id-cell">#${r.id}</td><td class="company-cell">${r.empresa}</td><td><span class="status-badge ${r.status==='Ativo'?'status-ativo':r.status==='Inativo'?'status-inativo':'status-pendente'}">${r.status}</span></td><td style="font-size:12px;font-family:'Space Mono',monospace;color:var(--muted)">${fmtDate(r.criado_em)}</td></tr>`;
+        return `<tr><td class="id-cell">#${r.id}</td><td class="company-cell">${r.empresa}</td><td><span class="status-badge ${r.status==='Ativo'?'status-ativo':r.status==='Inativo'?'status-inativo':'status-pendente'}">${r.status}</span></td><td style="font-size:12px;font-family:'Fira Code',monospace;color:var(--muted)">${fmtDate(r.criado_em)}</td></tr>`;
       }).join('');
     } else { recContainer.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Nenhum registro recente</td></tr>'; }
   } catch(e) { console.error('Dashboard error:', e); }
@@ -1250,12 +1264,12 @@ function renderOpList() {
 async function addOperadora() {
   const inp=document.getElementById('newOpInput'), nome=inp.value.trim().toUpperCase();
   if(!nome) return;
-  try { await api('/operadoras',{method:'POST',body:{nome}}); inp.value=''; await loadOperadoras(); renderOpList(); toast('✅ Operadora adicionada!'); }
-  catch(e) { toast('❌ '+e.message,true); }
+  try { await api('/operadoras',{method:'POST',body:{nome}}); inp.value=''; await loadOperadoras(); renderOpList(); toast('Operadora adicionada!'); }
+  catch(e) { toast(''+e.message,true); }
 }
 async function deleteOperadora(nome) {
   if(!confirm(`Remover "${nome}"?`)) return;
-  await api('/operadoras/'+encodeURIComponent(nome),{method:'DELETE'}); await loadOperadoras(); renderOpList(); toast('🗑 Removida.');
+  await api('/operadoras/'+encodeURIComponent(nome),{method:'DELETE'}); await loadOperadoras(); renderOpList(); toast('Removida.');
 }
 function openOpsModal() { renderOpList(); document.getElementById('overlayOps').classList.add('show'); }
 function closeOpsModal() { document.getElementById('overlayOps').classList.remove('show'); }
@@ -1283,7 +1297,7 @@ async function loadData() {
       const sc=r.status==='Ativo'?'status-ativo':r.status==='Inativo'?'status-inativo':'status-pendente';
       const nums=(r.numeros||[]).map(n=>`<span class="num-pill">${n}</span>`).join('');
       const dt=r.data_ativacao?' ('+fmtDate(r.data_ativacao)+')':'';
-      return`<tr><td class="cb"><input type="checkbox" class="row-cb" data-id="${r.id}"></td><td class="id-cell">#${r.id}</td><td class="company-cell" title="${r.obs||''}">${r.contrato?`<a class="company-link" href="${r.contrato}" target="_blank" rel="noopener" title="Abrir contrato: ${r.contrato}">${r.empresa} <span class="link-icon">🔗</span></a>`:r.empresa}</td><td class="number-cell">${nums||'—'}</td><td><span class="op-badge">${r.operadora||'—'}</span></td><td class="server-cell">${r.servidor?`<a class="server-link" href="${r.servidor.startsWith('http')?r.servidor:'http://'+r.servidor}" target="_blank" rel="noopener" title="${r.servidor}">${r.servidor}</a>`:'—'}</td><td><span class="status-badge ${sc}">${r.status}${dt}</span></td><td><div class="row-actions"><button class="row-btn" onclick="editById(${r.id})">✏️</button><button class="row-btn del" onclick="deleteById(${r.id})">🗑</button></div></td></tr>`;
+      return`<tr><td class="cb"><input type="checkbox" class="row-cb" data-id="${r.id}"></td><td class="id-cell">#${r.id}</td><td class="company-cell" title="${r.obs||''}">${r.contrato?`<a class="company-link" href="${r.contrato}" target="_blank" rel="noopener" title="Abrir contrato: ${r.contrato}">${r.empresa} <span class="link-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span></a>`:r.empresa}</td><td class="number-cell">${nums||'—'}</td><td><span class="op-badge">${r.operadora||'—'}</span></td><td class="server-cell">${r.servidor?`<a class="server-link" href="${r.servidor.startsWith('http')?r.servidor:'http://'+r.servidor}" target="_blank" rel="noopener" title="${r.servidor}">${r.servidor}</a>`:'—'}</td><td><span class="status-badge ${sc}">${r.status}${dt}</span></td><td><div class="row-actions"><button class="row-btn" onclick="editById(${r.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="row-btn del" onclick="deleteById(${r.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div></td></tr>`;
     }).join('');
   }
   const totalPages=Math.ceil(total/50);
@@ -1333,22 +1347,22 @@ function removeTag(i){numTags.splice(i,1);renderTags();}
 function renderTags(){document.getElementById('tagsWrap').innerHTML=numTags.map((n,i)=>`<span class="num-tag">${n} <button onclick="removeTag(${i})">×</button></span>`).join('');}
 async function saveRecord(){
   const empresa=document.getElementById('fEmpresa').value.trim();
-  if(!empresa){toast('❌ Informe o nome da empresa.',true);return;}
+  if(!empresa){toast('Informe o nome da empresa.',true);return;}
   const pending=document.getElementById('fNumInput').value.trim();
   if(pending){document.getElementById('fNumInput').value=pending;addNumTag();}
   const payload={empresa,numeros:numTags,operadora:document.getElementById('fOperadora').value,status:document.getElementById('fStatus').value,servidor:document.getElementById('fServidor').value.trim(),data_ativacao:document.getElementById('fData').value||null,contrato:document.getElementById('fContrato').value.trim(),obs:document.getElementById('fObs').value.trim()};
   const btn=document.getElementById('btnSave');btn.disabled=true;btn.textContent='Salvando...';
   try{
-    if(editingId){await api('/numeros/'+editingId,{method:'PUT',body:payload});toast('✅ Atualizado!');}
-    else{await api('/numeros',{method:'POST',body:payload});toast('✅ Adicionado!');}
+    if(editingId){await api('/numeros/'+editingId,{method:'PUT',body:payload});toast('Atualizado!');}
+    else{await api('/numeros',{method:'POST',body:payload});toast('Adicionado!');}
     closeModal();loadData();
-  }catch(e){toast('❌ '+e.message,true);}
+  }catch(e){toast(''+e.message,true);}
   finally{btn.disabled=false;btn.textContent='Salvar Registro';}
 }
 function editById(id){openModal(id);}
-async function deleteById(id){if(!confirm('Remover?'))return;await api('/numeros/'+id,{method:'DELETE'});toast('🗑 Removido.');loadData();}
-async function removeSelected(){const ids=[...document.querySelectorAll('.row-cb:checked')].map(c=>+c.dataset.id);if(!ids.length){toast('⚠️ Selecione ao menos um.',true);return;}if(!confirm(`Remover ${ids.length}?`))return;await api('/numeros',{method:'DELETE',body:{ids}});toast(`🗑 ${ids.length} removido(s).`);loadData();}
-function editSelected(){const ids=[...document.querySelectorAll('.row-cb:checked')].map(c=>+c.dataset.id);if(ids.length!==1){toast('⚠️ Selecione exatamente 1.',true);return;}openModal(ids[0]);}
+async function deleteById(id){if(!confirm('Remover?'))return;await api('/numeros/'+id,{method:'DELETE'});toast('Removido.');loadData();}
+async function removeSelected(){const ids=[...document.querySelectorAll('.row-cb:checked')].map(c=>+c.dataset.id);if(!ids.length){toast('Selecione ao menos um.',true);return;}if(!confirm(`Remover ${ids.length}?`))return;await api('/numeros',{method:'DELETE',body:{ids}});toast(`${ids.length} removido(s).`);loadData();}
+function editSelected(){const ids=[...document.querySelectorAll('.row-cb:checked')].map(c=>+c.dataset.id);if(ids.length!==1){toast('Selecione exatamente 1.',true);return;}openModal(ids[0]);}
 function toggleAll(cb){document.querySelectorAll('.row-cb').forEach(c=>c.checked=cb.checked);}
 
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
@@ -1365,8 +1379,8 @@ function downloadTemplate(){window.location.href=`${API}/import/template`;}
 function dzDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag-over');}
 function dzDragLeave(){document.getElementById('dropZone').classList.remove('drag-over');}
 function dzDrop(e){e.preventDefault();dzDragLeave();const f=e.dataTransfer.files[0];if(f)handleCsvFile(f);}
-function handleCsvFile(f){if(!f)return;importFile=f;document.getElementById('dropZone').querySelector('p').innerHTML=`📄 <strong>${f.name}</strong>`;document.getElementById('importResults').style.display='none';document.getElementById('btnImport').disabled=false;}
-async function doImport(){if(!importFile)return;const btn=document.getElementById('btnImport');btn.disabled=true;btn.textContent='Importando...';const fd=new FormData();fd.append('file',importFile);try{const res=await fetch(`${API}/import/csv`,{method:'POST',credentials:'include',body:fd});const data=await res.json();const el=document.getElementById('importResults');el.style.display='block';el.innerHTML=`<div class="ok">✅ ${data.criados} importado(s) com sucesso.</div>`+(data.erros.length?`<div class="err">⚠️ ${data.erros.length} erro(s):<br>${data.erros.map(e=>`• ${e}`).join('<br>')}</div>`:'');if(data.criados>0){loadData();toast(`✅ ${data.criados} importados!`);}}catch(e){toast('❌ '+e.message,true);}finally{btn.disabled=false;btn.textContent='Importar';}}
+function handleCsvFile(f){if(!f)return;importFile=f;document.getElementById('dropZone').querySelector('p').innerHTML=`<strong>${f.name}</strong>`;document.getElementById('importResults').style.display='none';document.getElementById('btnImport').disabled=false;}
+async function doImport(){if(!importFile)return;const btn=document.getElementById('btnImport');btn.disabled=true;btn.textContent='Importando...';const fd=new FormData();fd.append('file',importFile);try{const res=await fetch(`${API}/import/csv`,{method:'POST',credentials:'include',body:fd});const data=await res.json();const el=document.getElementById('importResults');el.style.display='block';el.innerHTML=`<div class="ok">${data.criados} importado(s) com sucesso.</div>`+(data.erros.length?`<div class="err">${data.erros.length} erro(s):<br>${data.erros.map(e=>`• ${e}`).join('<br>')}</div>`:'');if(data.criados>0){loadData();toast(`${data.criados} importados!`);}}catch(e){toast(''+e.message,true);}finally{btn.disabled=false;btn.textContent='Importar';}}
 
 // ── HISTÓRICO ─────────────────────────────────────────────────────────────────
 async function loadHistorico(){
@@ -1381,7 +1395,7 @@ async function loadHistorico(){
     tbody.innerHTML=data.map(r=>{
       const ac='acao-'+(r.acao||'default');
       let det='';try{const d=typeof r.detalhes==='string'?JSON.parse(r.detalhes):r.detalhes;det=d?Object.entries(d).slice(0,3).map(([k,v])=>`${k}:${JSON.stringify(v)}`).join(' | '):'';}catch(e){}
-      return`<tr><td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDatetime(r.criado_em)}</td><td style="font-size:13px">${r.nome||'—'} <span style="color:var(--muted);font-size:11px">(${r.username||'?'})</span></td><td><span class="acao-badge ${ac}">${r.acao}</span></td><td style="font-size:12px;color:var(--muted)">${r.entidade||'—'}</td><td style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)">${r.entidade_id||'—'}</td><td class="det-cell" title="${det}">${det||'—'}</td></tr>`;
+      return`<tr><td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDatetime(r.criado_em)}</td><td style="font-size:13px">${r.nome||'—'} <span style="color:var(--muted);font-size:11px">(${r.username||'?'})</span></td><td><span class="acao-badge ${ac}">${r.acao}</span></td><td style="font-size:12px;color:var(--muted)">${r.entidade||'—'}</td><td style="font-family:'Fira Code',monospace;font-size:11px;color:var(--muted)">${r.entidade_id||'—'}</td><td class="det-cell" title="${det}">${det||'—'}</td></tr>`;
     }).join('');
   }
   const totalPages=Math.ceil(total/50),pg=document.getElementById('paginacaoHist');
@@ -1399,7 +1413,7 @@ async function loadUsuarios(){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="role-badge role-${u.role}">${u.role}</span><span style="font-size:11px;color:${u.ativo?'var(--green)':'var(--danger)'}">${u.ativo?'● Ativo':'● Inativo'}</span></div>
       ${u.role!=='admin'?`<div style="display:flex;flex-wrap:wrap;gap:4px">${((typeof u.permissoes==='string'?JSON.parse(u.permissoes||'[]'):u.permissoes)||[]).map(p=>`<span style="background:rgba(0,153,255,.1);border:1px solid rgba(0,153,255,.2);border-radius:4px;padding:1px 7px;font-size:10px;color:var(--accent2)">${{ver_numeros:'Ver',criar_numero:'Adicionar',editar_numero:'Editar',remover_numero:'Remover',exportar:'Exportar',importar:'Importar',ver_historico:'Histórico',gerenciar_operadoras:'Operadoras'}[p]||p}</span>`).join('')||'<span style="font-size:11px;color:var(--muted)">Sem permissões</span>'}</div>`:'<span style="font-size:11px;color:var(--purple)">✦ Acesso total</span>'}
       ${u.ultimo_acesso?`<div style="font-size:11px;color:var(--muted);margin-top:8px">Último acesso: ${fmtDatetime(u.ultimo_acesso)}</div>`:''}
-      <div class="user-card-actions"><button class="row-btn" onclick="openUserModal(${u.id})">✏️ Editar</button>${u.id!==currentUser.id?`<button class="row-btn del" onclick="deleteUser(${u.id})">🗑 Remover</button>`:''}</div>
+      <div class="user-card-actions"><button class="row-btn" onclick="openUserModal(${u.id})">Editar</button>${u.id!==currentUser.id?`<button class="row-btn del" onclick="deleteUser(${u.id})">Remover</button>`:''}</div>
     </div>`).join('');
 }
 function togglePermsSection() {
@@ -1432,7 +1446,7 @@ function openUserModal(id=null){
     document.getElementById('overlayUser').classList.add('show');
     api('/usuarios').then(users=>{
       const u=users.find(x=>x.id===id);
-      if(!u){ toast('❌ Usuário não encontrado.',true); return; }
+      if(!u){ toast('Usuário não encontrado.',true); return; }
       document.getElementById('uNome').value=u.nome;
       document.getElementById('uUsername').value=u.username;
       document.getElementById('uRole').value=u.role;
@@ -1441,7 +1455,7 @@ function openUserModal(id=null){
       try { perms = u.permissoes ? (typeof u.permissoes==='string'?JSON.parse(u.permissoes):u.permissoes) : []; } catch(e){}
       setSelectedPerms(perms);
       togglePermsSection();
-    }).catch(e=>{ toast('❌ Erro ao carregar usuário: '+e.message,true); });
+    }).catch(e=>{ toast('Erro ao carregar usuário: '+e.message,true); });
   } else {
     document.getElementById('overlayUser').classList.add('show');
   }
@@ -1449,18 +1463,18 @@ function openUserModal(id=null){
 function closeUserModal(){document.getElementById('overlayUser').classList.remove('show');editingUserId=null;}
 async function saveUser(){
   const nome=document.getElementById('uNome').value.trim(),username=document.getElementById('uUsername').value.trim(),password=document.getElementById('uPassword').value,role=document.getElementById('uRole').value,ativo=document.getElementById('uAtivo').value;
-  if(!nome||!username){toast('❌ Preencha nome e username.',true);return;}
-  if(!editingUserId&&!password){toast('❌ Informe a senha.',true);return;}
+  if(!nome||!username){toast('Preencha nome e username.',true);return;}
+  if(!editingUserId&&!password){toast('Informe a senha.',true);return;}
   const permissoes = role==='admin' ? [] : getSelectedPerms();
   const btn=document.getElementById('btnUserSave');btn.disabled=true;btn.textContent='Salvando...';
   try{
-    if(editingUserId){await api('/usuarios/'+editingUserId,{method:'PUT',body:{nome,role,ativo:Number(ativo),password:password||undefined,permissoes}});toast('✅ Usuário atualizado!');}
-    else{await api('/usuarios',{method:'POST',body:{nome,username,password,role,permissoes}});toast('✅ Usuário criado!');}
+    if(editingUserId){await api('/usuarios/'+editingUserId,{method:'PUT',body:{nome,role,ativo:Number(ativo),password:password||undefined,permissoes}});toast('Usuário atualizado!');}
+    else{await api('/usuarios',{method:'POST',body:{nome,username,password,role,permissoes}});toast('Usuário criado!');}
     closeUserModal();loadUsuarios();
-  }catch(e){toast('❌ '+e.message,true);}
+  }catch(e){toast(''+e.message,true);}
   finally{btn.disabled=false;btn.textContent='Salvar';}
 }
-async function deleteUser(id){if(!confirm('Remover usuário?'))return;await api('/usuarios/'+id,{method:'DELETE'});toast('🗑 Removido.');loadUsuarios();}
+async function deleteUser(id){if(!confirm('Remover usuário?'))return;await api('/usuarios/'+id,{method:'DELETE'});toast('Removido.');loadUsuarios();}
 
 // ── KEYBOARD ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e=>{
@@ -1478,7 +1492,7 @@ function toast(msg,err=false){const t=document.getElementById('toast');t.textCon
 async function downloadBackup(){
   const btn=event.target;btn.disabled=true;btn.textContent='Gerando...';
   const st=document.getElementById('backupStatus');
-  st.textContent='⏳ Gerando backup...';
+  st.textContent='Gerando backup...';
   try{
     const token=localStorage.getItem('telecrm_token')||'';
     const headers={};if(token)headers['Authorization']='Bearer '+token;
@@ -1490,20 +1504,20 @@ async function downloadBackup(){
     const data=new Date().toISOString().split('T')[0];
     a.href=url;a.download=`voipflow-backup-${data}.json.gz`;a.click();
     URL.revokeObjectURL(url);
-    st.textContent='✅ Backup gerado com sucesso!';
+    st.textContent='Backup gerado com sucesso!';
     st.style.color='var(--green)';
-    toast('✅ Backup baixado!');
+    toast('Backup baixado!');
   }catch(e){
-    st.textContent='❌ '+e.message;st.style.color='var(--danger)';
-    toast('❌ '+e.message,true);
-  }finally{btn.disabled=false;btn.textContent='⬇️ Baixar Backup';}
+    st.textContent=''+e.message;st.style.color='var(--danger)';
+    toast(''+e.message,true);
+  }finally{btn.disabled=false;btn.textContent='Baixar Backup';}
 }
 
 async function uploadRestore(input){
   const file=input.files[0];if(!file)return;
-  if(!confirm('⚠️ ATENÇÃO: Isso irá SUBSTITUIR todos os dados atuais pelo backup. Continuar?'))return;
+  if(!confirm('ATENÇÃO: Isso irá SUBSTITUIR todos os dados atuais pelo backup. Continuar?'))return;
   const st=document.getElementById('backupStatus');
-  st.textContent='⏳ Restaurando backup...';st.style.color='var(--warn)';
+  st.textContent='Restaurando backup...';st.style.color='var(--warn)';
   console.log('Uploading backup:', file.name, file.size, file.type);
   try{
     const token=localStorage.getItem('telecrm_token')||'';
@@ -1520,12 +1534,12 @@ async function uploadRestore(input){
       }
     }
     const data=await r.json();
-    st.textContent='✅ Backup restaurado! Recarregando...';st.style.color='var(--green)';
-    toast('✅ Backup restaurado com sucesso!');
+    st.textContent='Backup restaurado! Recarregando...';st.style.color='var(--green)';
+    toast('Backup restaurado com sucesso!');
     setTimeout(()=>location.reload(),2000);
   }catch(e){
-    st.textContent='❌ '+e.message;st.style.color='var(--danger)';
-    toast('❌ '+e.message,true);
+    st.textContent=''+e.message;st.style.color='var(--danger)';
+    toast(''+e.message,true);
     console.error('Restore error:', e);
   }
   input.value='';
@@ -1567,18 +1581,18 @@ async function loadPorta(){
     return`<tr>
       <td class="id-cell">#${p.id}</td>
       <td class="company-cell">${p.empresa}</td>
-      <td><div style="font-size:13px;font-weight:500">${p.titular||'—'}</div><div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">${p.cnpj_cpf||''}</div></td>
+      <td><div style="font-size:13px;font-weight:500">${p.titular||'—'}</div><div style="font-size:11px;color:var(--muted);font-family:'Fira Code',monospace">${p.cnpj_cpf||''}</div></td>
       <td>${nums||'—'}</td>
       <td style="font-size:12px"><span class="op-badge">${origem}</span> → <span class="op-badge">${destino}</span></td>
-      <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--warn)">${p.protocolo||'—'}</td>
+      <td style="font-family:'Fira Code',monospace;font-size:12px;color:var(--warn)">${p.protocolo||'—'}</td>
       <td><span class="status-porta ${sc}">${p.status}</span></td>
       <td style="font-size:12px;color:var(--muted)">${p.data_abertura?fmtDate(p.data_abertura):'—'}</td>
-      <td style="font-size:12px;text-align:center">${p.docs_count||0} 📎</td>
+      <td style="font-size:12px;text-align:center">${p.docs_count||0}</td>
       <td><div class="row-actions">
-        <button class="row-btn" onclick="openPortaModal(${p.id})">🔍</button>
-        <button class="row-btn" title="Gerar Termo" onclick="gerarTermoRapido(${p.id})" style="color:#00e5a0">🖨</button>
-        ${canEdit?`<button class="row-btn" onclick="openPortaModal(${p.id})">✏️</button>`:''}
-        ${canDel?`<button class="row-btn del" onclick="deletePorta(${p.id})">🗑</button>`:''}
+        <button class="row-btn" onclick="openPortaModal(${p.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="row-btn" title="Gerar Termo" onclick="gerarTermoRapido(${p.id})" style="color:#00e5a0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></button>
+        ${canEdit?`<button class="row-btn" onclick="openPortaModal(${p.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>`:''}
+        ${canDel?`<button class="row-btn del" onclick="deletePorta(${p.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>`:''}
       </div></td>
     </tr>`;
   }).join('');
@@ -1639,13 +1653,13 @@ async function consultarOperadoraAuto(num){
       const match=opts.find(o=>r.operadora.toUpperCase().includes(o.toUpperCase()));
       if(match){
         opOrigem.value=match;
-        toast('✅ Operadora: '+match);
+        toast('Operadora: '+match);
       }else{
-        toast('⚠️ Operadora não encontrada na lista: '+r.operadora+'. Selecione manualmente.',true);
+        toast('Operadora não encontrada na lista: '+r.operadora+'. Selecione manualmente.',true);
       }
-      if(r.portado==='SIM'){toast('⚠️ Número portado de outra operadora!',true);}
+      if(r.portado==='SIM'){toast('Número portado de outra operadora!',true);}
     }else{
-      toast('❌ Operadora não encontrada para este número',true);
+      toast('Operadora não encontrada para este número',true);
     }
   }catch(e){console.log('Erro consulta operador:',e);}
 }
@@ -1662,11 +1676,11 @@ async function consultarOperadoraPorta(){
       const opOrigem=document.getElementById('pOpOrigem');
       const opts=Array.from(opOrigem.options).map(o=>o.value);
       const match=opts.find(o=>r.operadora.toUpperCase().includes(o.toUpperCase()));
-      if(match){opOrigem.value=match;toast('✅ Operadora: '+r.operadora);}else{toast('⚠️ Operadora encontrada: '+r.operadora+' (selecione manualmente)',true);}
-      if(r.portado==='SIM'){toast('⚠️ Número portado!',true);}
-    }else{toast('❌ Número não encontrado',true);}
-  }catch(e){toast('❌ Erro: '+e.message,true);}
-  finally{btn.disabled=false;btn.textContent='🔍 Consultar Operadora';}
+      if(match){opOrigem.value=match;toast('Operadora: '+r.operadora);}else{toast('Operadora encontrada: '+r.operadora+' (selecione manualmente)',true);}
+      if(r.portado==='SIM'){toast('Número portado!',true);}
+    }else{toast('Número não encontrado',true);}
+  }catch(e){toast('Erro: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Consultar Operadora';}
 }
 
 // Abrir modal
@@ -1721,7 +1735,7 @@ function closePortaModal(){document.getElementById('overlayPorta').classList.rem
 
 async function savePorta(){
   const empresa=document.getElementById('pEmpresa').value.trim();
-  if(!empresa){toast('❌ Informe o nome da empresa.',true);return null;}
+  if(!empresa){toast('Informe o nome da empresa.',true);return null;}
   const pending=document.getElementById('pNumInput').value.trim();
   if(pending){document.getElementById('pNumInput').value=pending;addPortaTag();}
   const payload={
@@ -1743,9 +1757,9 @@ async function savePorta(){
       const statusAnterior = document.getElementById('pStatus').dataset.statusAnterior||'';
       pedido=await api('/portabilidade/'+editingPortaId,{method:'PUT',body:payload});
       if(payload.status==='Concluido' && statusAnterior !== 'Concluido'){
-        toast('🎉 Portabilidade concluída! Números copiados para a aba Números automaticamente.');
+        toast('Portabilidade concluída! Números copiados para a aba Números automaticamente.');
       } else {
-        toast('✅ Pedido atualizado!');
+        toast('Pedido atualizado!');
       }
     } else {
       pedido=await api('/portabilidade',{method:'POST',body:payload});
@@ -1753,18 +1767,18 @@ async function savePorta(){
       editingPortaId=pedido.id;
       document.getElementById('pStatus').dataset.statusAnterior=pedido.status;
       document.getElementById('portaModalTitle').textContent='Editar Pedido de Portabilidade';
-      toast('✅ Pedido criado! Protocolo: '+pedido.protocolo);
+      toast('Pedido criado! Protocolo: '+pedido.protocolo);
     }
     loadPorta();
     return editingPortaId;
-  }catch(e){toast('❌ '+e.message,true);return null;}
+  }catch(e){toast(''+e.message,true);return null;}
   finally{btn.disabled=false;btn.textContent='Salvar Pedido';}
 }
 
 async function deletePorta(id){
   if(!confirm('Remover este pedido e todos os documentos?'))return;
   await api('/portabilidade/'+id,{method:'DELETE'});
-  toast('🗑 Pedido removido.');loadPorta();
+  toast('Pedido removido.');loadPorta();
 }
 
 // ── DOCUMENTOS ────────────────────────────────────────────────────────────────
@@ -1775,7 +1789,7 @@ function renderDocsList(docs){
   if(!docs.length){el.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0">Nenhum documento anexado ainda.</p>';return;}
   const token=localStorage.getItem('telecrm_token')||'';
   el.innerHTML=docs.map(d=>{
-    const icon={'CPF':'🪪','CNH':'🚗','Contrato Social':'📄','Conta de Telefone':'📱','Outro':'📎'}[d.categoria]||'📎';
+    const icon={'CPF':'CPF','CNH':'CNH','Contrato Social':'Contrato','Conta de Telefone':'Telefone','Outro':'Doc'}[d.categoria]||'Doc';
     const isImg=d.mime_type&&d.mime_type.startsWith('image/');
     const isPdf=d.mime_type==='application/pdf';
     const url=`/api/portabilidade/${d.pedido_id}/docs/${d.id}/download`;
@@ -1786,8 +1800,8 @@ function renderDocsList(docs){
         <div class="doc-meta"><span class="doc-cat">${d.categoria}</span> • ${d.tamanho?formatBytes(d.tamanho):''} • ${fmtDatetime(d.enviado_em)}</div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <a href="${url}" target="_blank" class="row-btn" style="text-decoration:none;padding:4px 10px">${isImg?'🖼️ Ver':isPdf?'📄 Ver':'⬇️ Baixar'}</a>
-        <button class="row-btn del" onclick="removeDoc(${d.id},${d.pedido_id})">🗑</button>
+        <a href="${url}" target="_blank" class="row-btn" style="text-decoration:none;padding:4px 10px">${isImg?'Ver imagem':isPdf?'Ver PDF':'Baixar'}</a>
+        <button class="row-btn del" onclick="removeDoc(${d.id},${d.pedido_id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
       </div>
     </div>`;
   }).join('');
@@ -1796,9 +1810,9 @@ function renderDocsList(docs){
 async function uploadDocs(files){
   // Se pedido não foi salvo ainda, salva automaticamente
   if(!editingPortaId){
-    toast('💾 Salvando pedido antes de anexar...');
+    toast('Salvando pedido antes de anexar...');
     const savedId = await savePorta();
-    if(!savedId){toast('❌ Salve o pedido primeiro.',true);return;}
+    if(!savedId){toast('Salve o pedido primeiro.',true);return;}
   }
   const cat=document.getElementById('docCategoria').value;
   for(const file of files){
@@ -1811,14 +1825,14 @@ async function uploadDocs(files){
       const r=await fetch(`/api/portabilidade/${editingPortaId}/docs`,{method:'POST',credentials:'include',headers:_headers,body:fd});
       const text=await r.text();
       let data;
-      try{ data=JSON.parse(text); }catch(e){ toast('❌ Erro no servidor ao enviar '+file.name+' (resposta inválida)',true); continue; }
+      try{ data=JSON.parse(text); }catch(e){ toast('Erro no servidor ao enviar '+file.name+' (resposta inválida)',true); continue; }
       if(!data.ok)throw new Error(data.error||'Erro desconhecido');
-    }catch(e){toast('❌ Erro ao enviar '+file.name+': '+e.message,true);}
+    }catch(e){toast('Erro ao enviar '+file.name+': '+e.message,true);}
   }
   // Recarrega docs
   const p=await api('/portabilidade/'+editingPortaId);
   renderDocsList(p.docs||[]);
-  toast('✅ Documento(s) anexado(s)!');
+  toast('Documento(s) anexado(s)!');
 }
 
 async function removeDoc(docId,pedidoId){
@@ -1827,7 +1841,7 @@ async function removeDoc(docId,pedidoId){
   await api(`/portabilidade/${pid}/docs/${docId}`,{method:'DELETE'});
   const p=await api('/portabilidade/'+pid);
   renderDocsList(p.docs||[]);
-  toast('🗑 Documento removido.');
+  toast('Documento removido.');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -1891,7 +1905,7 @@ async function gerarTermoRapido(id) {
 
     document.getElementById('overlayTermo').style.display = 'flex';
     document.getElementById('overlayTermo').classList.add('show');
-  } catch(e) { toast('❌ Erro ao gerar termo: ' + e.message, true); }
+  } catch(e) { toast('Erro ao gerar termo: ' + e.message, true); }
 }
 
 function gerarTermoPortabilidade() {
