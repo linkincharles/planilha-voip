@@ -542,7 +542,7 @@ app.get('/api/dashboard', requirePermissao('ver_numeros'), async (req, res) => {
 });
 
 app.get('/api/numeros', requirePermissao('ver_numeros'), async (req, res) => {
-  const { q = '', status, page = 1, limit = 50, from, to } = req.query;
+  const { q = '', status, page = 1, limit = 50, from, to, group } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   let where = 'WHERE 1=1';
   const params = [];
@@ -554,6 +554,34 @@ app.get('/api/numeros', requirePermissao('ver_numeros'), async (req, res) => {
     const like = `%${q}%`;
     params.push(like, like, like, like);
   }
+
+  // MODO AGRUPADO: 1 linha por empresa, com lista de números selecionáveis
+  if (group) {
+    const [[{ total }]] = await pool.query(`SELECT COUNT(DISTINCT empresa) AS total FROM numeros n ${where}`, params);
+    const [groups] = await pool.query(
+      `SELECT empresa, COUNT(*) AS cnt, SUM(status='Ativo') AS ativos, SUM(status='Inativo') AS inativos, SUM(status='Pendente') AS pendentes
+       FROM numeros n ${where} GROUP BY empresa ORDER BY empresa ASC LIMIT ? OFFSET ?`,
+      [...params, Number(limit), offset]
+    );
+    const data = [];
+    for (const g of groups) {
+      const [tels] = await pool.query(
+        `SELECT id, telefone, operadora, status FROM numeros WHERE empresa = ? ${status && status!=='todos' ? 'AND status = ?' : ''} ORDER BY telefone`,
+        status && status!=='todos' ? [g.empresa, status] : [g.empresa]
+      );
+      data.push({
+        empresa: g.empresa,
+        total: g.cnt,
+        ativos: g.ativos||0,
+        inativos: g.inativos||0,
+        pendentes: g.pendentes||0,
+        telefones: tels.map(t => ({ id: t.id, telefone: t.telefone, operadora: t.operadora, status: t.status }))
+      });
+    }
+    const stats = await getStats();
+    return res.json({ data, total: Number(total), stats, grouped: true });
+  }
+
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM numeros n ${where}`, params);
   const sort = req.query.sort || 'id';
   const dir = req.query.dir === 'desc' ? 'DESC' : 'ASC';

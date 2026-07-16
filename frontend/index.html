@@ -99,7 +99,13 @@
   .company-link{color:var(--accent2);text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:5px;}
   .company-link:hover{color:var(--accent);text-decoration:underline;}
   .company-link .link-icon{font-size:11px;opacity:.6;flex-shrink:0;}
-  .num-pill{display:inline-block;background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.15);border-radius:4px;padding:2px 7px;margin:1px 2px;font-size:11.5px;}
+  .num-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:3px 8px;margin:2px;font-size:11.5px;}
+  .num-pill .num-text{font-family:'Fira Code',monospace;font-weight:500;}
+  .op-mini{font-size:10px;color:var(--muted);background:var(--surface2);border-radius:3px;padding:1px 5px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .status-dot.status-ativo{background:var(--green);}
+  .status-dot.status-inativo{background:var(--danger);}
+  .status-dot.status-pendente{background:var(--warn);}
   .op-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(0,153,255,.12);color:var(--accent2);border:1px solid rgba(0,153,255,.2);font-family:'Fira Code',monospace;}
   .server-cell{font-family:'Fira Code',monospace;font-size:12px;color:var(--warn);}
   .server-link{font-family:'Fira Code',monospace;font-size:12px;color:var(--warn);text-decoration:none;}
@@ -393,6 +399,7 @@
         <span style="color:var(--muted);font-size:12px">Até:</span>
         <input type="date" id="dateTo" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px" onchange="debounceLoad()">
       </div>
+      <button class="btn btn-secondary" id="btnGroup" onclick="toggleGroup()" style="font-size:12px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg> Agrupar por empresa</button>
     </div>
     <div class="result-count" id="resultCount">Carregando...</div>
     <div class="table-wrap">
@@ -830,6 +837,7 @@
 <script>
 const API='/api';
 let filterStatus='todos', editingId=null, editingUserId=null;
+let groupedView=false;
 let operadoras=[], importFile=null, logoFilePending=null;
 let debounceTimer=null, currentPage=1, histPage=1;
 let currentUser=null, appConfig={};
@@ -1280,18 +1288,27 @@ async function loadData() {
   const from=document.getElementById('dateFrom').value;
   const to=document.getElementById('dateTo').value;
   const params=new URLSearchParams({q,status:filterStatus,page:currentPage,limit:50});
-  if(sortCol){params.set('sort',sortCol);params.set('dir',sortDir);}
+  if(sortCol && !groupedView){params.set('sort',sortCol);params.set('dir',sortDir);}
   if(from)params.set('from',from);
   if(to)params.set('to',to);
-  const {data,total,stats}=await api('/numeros?'+params);
+  if(groupedView)params.set('group','1');
+  const {data,total,stats,grouped}=await api('/numeros?'+params);
   document.getElementById('statTotal').textContent  = stats.total;
   document.getElementById('statAtivo').textContent  = stats.ativos;
   document.getElementById('statInativo').textContent= stats.inativos;
-  document.getElementById('resultCount').textContent= `${total} registro${total!==1?'s':''}`;
+  document.getElementById('resultCount').textContent= `${total} empresa${total!==1?'s':''} · ${stats.total} número${stats.total!==1?'s':''}`;
   const tbody=document.getElementById('tbody'),empty=document.getElementById('emptyState');
-  if(!data.length){tbody.innerHTML='';empty.style.display='block';}
+  // ajusta cabecalho conforme modo
+  const thead=document.querySelector('#pageNumeros table thead tr');
+  if(groupedView){
+    thead.innerHTML='<th class="cb"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th><th>Empresa</th><th>Números (selecionável por número)</th><th>Status</th><th>Ações</th>';
+  } else {
+    thead.innerHTML='<th class="cb"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th><th class="sortable" data-sort="id" onclick="sortBy(\'id\',this)">ID <span class="sort-icon"></span></th><th class="sortable" data-sort="empresa" onclick="sortBy(\'empresa\',this)">Empresa <span class="sort-icon"></span></th><th class="sortable" data-sort="telefone" onclick="sortBy(\'telefone\',this)">Telefone <span class="sort-icon"></span></th><th class="sortable" data-sort="operadora" onclick="sortBy(\'operadora\',this)">Operadora <span class="sort-icon"></span></th><th class="sortable" data-sort="servidor" onclick="sortBy(\'servidor\',this)">Servidor <span class="sort-icon"></span></th><th class="sortable" data-sort="status" onclick="sortBy(\'status\',this)">Status <span class="sort-icon"></span></th><th class="sortable" data-sort="data_ativacao" onclick="sortBy(\'data_ativacao\',this)">Data <span class="sort-icon"></span></th><th>Ações</th>';
+  }
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  if(groupedView){ tbody.innerHTML=renderGrouped(data); }
   else{
-    empty.style.display='none';
     tbody.innerHTML=data.map(r=>{
       const sc=r.status==='Ativo'?'status-ativo':r.status==='Inativo'?'status-inativo':'status-pendente';
       const nums=(r.numeros&&r.numeros.length)?r.numeros[0]:(r.telefone||'—');
@@ -1304,6 +1321,26 @@ async function loadData() {
   if(totalPages<=1){pg.innerHTML='';return;}
   pg.innerHTML=`<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>← Anterior</button><span>Página ${currentPage} de ${totalPages}</span><button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>Próxima →</button>`;
 }
+function toggleGroup(){groupedView=!groupedView;currentPage=1;const b=document.getElementById('btnGroup');b.style.background=groupedView?'rgba(0,229,160,.15)':'';b.style.borderColor=groupedView?'rgba(0,229,160,.4)':'';loadData();}
+function renderGrouped(groups){
+  return groups.map(g=>{
+    const pills=g.telefones.map(t=>{
+      const sc=t.status==='Ativo'?'status-ativo':t.status==='Inativo'?'status-inativo':'status-pendente';
+      return`<span class="num-pill" style="display:inline-flex;align-items:center;gap:4px;margin:2px">
+        <input type="checkbox" class="row-cb" data-id="${t.id}" style="width:13px;height:13px;accent-color:var(--accent)">
+        <span class="num-text">${t.telefone}</span>
+        ${t.operadora?`<span class="op-mini">${t.operadora}</span>`:''}
+        <span class="status-dot ${sc}"></span>
+        <button class="row-btn" style="padding:1px 5px" onclick="editById(${t.id})"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="row-btn del" style="padding:1px 5px" onclick="deleteById(${t.id})"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+      </span>`;
+    }).join('');
+    const resumo=`${g.telefones.length} número${g.telefones.length!==1?'s':''} · ${g.ativos} ativo${g.ativos!==1?'s':''} · ${g.inativos} inativo${g.inativos!==1?'s':''}${g.pendentes?` · ${g.pendentes} pendente${g.pendentes!==1?'s':''}`:''}`;
+    return`<tr><td class="cb"><input type="checkbox" class="grp-cb" data-empresa="${encodeURIComponent(g.empresa)}" onchange="toggleGrp(this)"></td><td class="company-cell" style="font-weight:600">${g.empresa}</td><td class="number-cell"><div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${pills}</div><div style="font-size:11px;color:var(--muted);margin-top:6px">${resumo}</div></td><td><span style="font-size:12px;color:var(--muted)">${resumo.split(' · ')[0]}</span></td><td><div class="row-actions"><button class="row-btn" onclick="addNumberTo('${encodeURIComponent(g.empresa)}')" title="Adicionar número"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div></td></tr>`;
+  }).join('');
+}
+function toggleGrp(cb){const tr=cb.closest('tr');tr.querySelectorAll('input.row-cb').forEach(c=>c.checked=cb.checked);}
+function addNumberTo(empEncoded){const emp=decodeURIComponent(empEncoded);editingId=null;document.getElementById('modalTitle').textContent='Novo Número';['fEmpresa','fTelefone','fServidor','fContrato','fObs'].forEach(i=>document.getElementById(i).value='');document.getElementById('fEmpresa').value=emp;document.getElementById('fOperadora').value='';document.getElementById('fStatus').value='Ativo';document.getElementById('fData').value=new Date().toISOString().split('T')[0];document.getElementById('overlay').classList.add('show');setTimeout(()=>document.getElementById('fTelefone').focus(),100);}
 function goPage(p){currentPage=p;loadData();}
 function debounceLoad(){currentPage=1;clearTimeout(debounceTimer);debounceTimer=setTimeout(loadData,300);}
 function fmtDate(d){if(!d)return'';const s=d.split('T')[0],p=s.split('-');return`${p[2]}/${p[1]}/${p[0]}`;}
