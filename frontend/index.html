@@ -2005,24 +2005,22 @@ function imprimirTermo() {
 checkSession();
 
 // Custom Confirm Modal
-let _confirmResolve;
 function confirmModal(message, title='Confirmar Ação'){
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMsg').textContent = message;
-  document.getElementById('overlayConfirm').classList.add('show');
-
+  const overlay = document.getElementById('overlayConfirm');
+  overlay.classList.add('show');
   return new Promise(resolve => {
-    _confirmResolve = resolve;
+    document.getElementById('confirmYes').onclick = () => {
+      overlay.classList.remove('show');
+      resolve(true);
+    };
+    document.getElementById('confirmNo').onclick = () => {
+      overlay.classList.remove('show');
+      resolve(false);
+    };
   });
 }
-document.getElementById('confirmYes').onclick = () => {
-  document.getElementById('overlayConfirm').classList.remove('show');
-  _confirmResolve(true);
-};
-document.getElementById('confirmNo').onclick = () => {
-  document.getElementById('overlayConfirm').classList.remove('show');
-  _confirmResolve(false);
-};
 
 
 async function enableSelected(){
