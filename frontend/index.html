@@ -1373,7 +1373,7 @@ async function saveRecord(){
   finally{btn.disabled=false;btn.textContent='Salvar Registro';}
 }
 function editById(id){openModal(id);}
-async function deleteById(id){if(!await confirmModal('Tem certeza que deseja remover este número?', 'Remover Número?'))return;await api('/numeros/'+id,{method:'DELETE'});toast('Removido.');loadData();}
+async function deleteById(id){if(!await confirmModal('Tem certeza que deseja remover este número?', 'Remover Número?'))return;await api('/numeros/'+id,{method:'DELETE'});toast('Removido.');await loadData();}
 async function removeSelected(){const ids=[...document.querySelectorAll('input.row-cb[data-id]:checked')].map(c=>+c.dataset.id);if(!ids.length){toast('Selecione ao menos um.',true);return;}if(!await confirmModal(`Tem certeza que deseja remover ${ids.length} número(s) selecionado(s)?`, 'Remover Selecionados?'))return;await api('/numeros',{method:'DELETE',body:{ids}});toast(`${ids.length} removido(s).`);loadData();}
 function editSelected(){const ids=[...document.querySelectorAll('input.row-cb[data-id]:checked')].map(c=>+c.dataset.id);if(ids.length!==1){toast('Selecione exatamente 1.',true);return;}openModal(ids[0]);}
 function toggleAll(cb){document.querySelectorAll('.row-cb').forEach(c=>c.checked=cb.checked);}
@@ -1789,7 +1789,7 @@ async function savePorta(){
 }
 
 async function deletePorta(id){
-  if(!await confirmModal('Tem certeza que deseja remover este pedido de portabilidade e todos os documentos anexados? Esta ação é irreversível.', 'Remover Pedido?'))return;
+  if(!await confirmModal('Tem certeza que deseja remover este pedido de portabilidade e todos os documentos anexados?', 'Remover Pedido?'))return;
   await api('/portabilidade/'+id,{method:'DELETE'});
   toast('Pedido removido.');loadPorta();
 }
@@ -2031,7 +2031,7 @@ async function enableSelected(){
   if(!(await confirmModal(`Ativar ${ids.length} número(s)?`, 'Ativar Selecionados?')))return;
   await api('/numeros/ativar-lote',{method:'POST',body:{ids}});
   toast(`${ids.length} ativado(s).`);
-  loadData();
+  await loadData();
 }
 
 
@@ -2041,13 +2041,13 @@ async function disableSelected(){
   if(!(await confirmModal(`Desativar ${ids.length} número(s)?`, 'Desativar Selecionados?')))return;
   await api('/numeros/desativar-lote',{method:'POST',body:{ids}});
   toast(`${ids.length} desativado(s).`);
-  loadData();
+  await loadData();
 }
 
 
 </script>
 
-<div class="overlay" id="overlayConfirm" style="display:none;z-index:2000">
+<div class="overlay" id="overlayConfirm" style="z-index:2000">
   <div class="modal sm" style="max-width:420px">
     <div class="modal-title"><div class="dot" style="background:var(--warn)"></div><span id="confirmTitle">Confirmar</span></div>
     <p id="confirmMsg" style="font-size:14px;color:var(--text);margin:8px 0 20px;line-height:1.5"></p>
