@@ -651,6 +651,20 @@ app.delete('/api/numeros/:id', requirePermissao('remover_numero'), async (req, r
   res.json({ ok: true });
 });
 
+app.post('/api/numeros/ativar-lote', requirePermissao('editar_numero'), async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'IDs inválidos' });
+  await pool.query('UPDATE numeros SET status = "Ativo" WHERE id IN (?)', [ids]);
+  res.json({ ok: true });
+});
+
+app.post('/api/numeros/desativar-lote', requirePermissao('editar_numero'), async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'IDs inválidos' });
+  await pool.query('UPDATE numeros SET status = "Inativo" WHERE id IN (?)', [ids]);
+  res.json({ ok: true });
+});
+
 app.delete('/api/numeros', requirePermissao('remover_numero'), async (req, res) => {
   const { ids } = req.body;
   if (!ids || !ids.length) return res.status(400).json({ error: 'IDs obrigatórios' });
