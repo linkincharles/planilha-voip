@@ -23,6 +23,9 @@ services:
     image: ghcr.io/linkincharles/planilha-voip-backend:latest
     container_name: telecrm_api
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       DB_HOST: db
       DB_PORT: 3306

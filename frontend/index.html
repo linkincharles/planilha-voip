@@ -630,10 +630,12 @@
       <!-- Consulta Operadora API -->
       <div class="config-section">
         <h3><div class="dot" style="background:var(--accent2)"></div>API Consulta de Operadora</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Configure a URL da API para consulta automática de operadoras.</p>
-        <div class="config-row"><label>URL da API</label><input type="text" id="cfgApiConsOpUrl" placeholder="http://10.5.24.190:9001/src/api.php"></div>
-        <div class="config-row"><label>Login</label><input type="text" id="cfgApiConsOpLogin" placeholder="admin"></div>
-        <div class="config-row"><label>Senha</label><input type="password" id="cfgApiConsOpSenha" placeholder="123"></div>
+        <p style="font-size:13px;color:var(--text);margin-bottom:16px;line-height:1.5">
+          <strong>Twilio Lookup</strong>: digite <code>twilio</code> na URL, seu <strong>Account SID</strong> em Login e <strong>Auth Token</strong> em Senha.<br>
+          <strong>API customizada</strong>: informe a URL completa da API.</p>
+        <div class="config-row"><label id="lblApiUrl">URL da API</label><input type="text" id="cfgApiConsOpUrl" placeholder="twilio ou http://..."></div>
+        <div class="config-row"><label id="lblApiLogin">Login</label><input type="text" id="cfgApiConsOpLogin" placeholder="Account SID ou admin"></div>
+        <div class="config-row"><label id="lblApiSenha">Senha</label><input type="password" id="cfgApiConsOpSenha" placeholder="Auth Token ou 123"></div>
         <button class="btn btn-add" onclick="salvarApiConsulta()" style="margin-top:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar Configuração</button>
         <div id="cfgApiConsOpStatus" style="margin-top:8px;font-size:12px"></div>
       </div>

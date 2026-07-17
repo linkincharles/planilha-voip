@@ -487,21 +487,61 @@ app.get('/api/consulta-operadora', requireAuth, async (req, res) => {
   try {
     // Busca config da API
     const [[config]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'api_consulta_operadora_url'");
-    const apiUrl = config?.valor || '';
-    
-    if (!apiUrl || apiUrl.trim() === '') {
-      return res.status(503).json({ error: 'API de consulta não configurada. Configure em Configurações.' });
-    }
+    const apiUrl = (config?.valor || '').trim();
     
     const [[loginCfg]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'api_consulta_operadora_login'");
     const [[senhaCfg]] = await pool.query("SELECT valor FROM configuracoes WHERE chave = 'api_consulta_operadora_senha'");
     
-    const login = loginCfg?.valor || 'admin';
-    const senha = senhaCfg?.valor || '123';
+    const login = loginCfg?.valor || '';
+    const senha = senhaCfg?.valor || '';
     
-    console.log('Consultando operadora:', numero, 'URL:', apiUrl);
+    // ── TWILIO LOOKUP ──────────────────────────────────────────
+    if (apiUrl.toLowerCase() === 'twilio') {
+      if (!login || !senha) {
+        return res.status(503).json({ error: 'Twilio não configurado. Preencha Account SID e Auth Token em Configurações.' });
+      }
+      
+      // Formatar número para E.164 (+55DDDNUMERO)
+      const clean = numero.replace(/\D/g, '');
+      const e164 = clean.startsWith('55') ? '+' + clean : '+55' + clean;
+      
+      const twilioRes = await fetch(
+        `https://lookups.twilio.com/v2/PhoneNumbers/${encodeURIComponent(e164)}?Fields=line_type_intelligence`,
+        {
+          headers: {
+            'Authorization': 'Basic ' + Buffer.from(login + ':' + senha).toString('base64')
+          }
+        }
+      );
+      
+      if (!twilioRes.ok) {
+        const errText = await twilioRes.text();
+        return res.status(502).json({ error: 'Twilio retornou erro: ' + (errText || twilioRes.statusText) });
+      }
+      
+      const twilioData = await twilioRes.json();
+      const carrier = twilioData.line_type_intelligence || {};
+      
+      // Mapeia para o formato esperado pelo frontend
+      res.json({
+        resposta: twilioData.valid ? 'ok' : 'nao_encontrado',
+        operadora: carrier.carrier_name || carrier.original_carrier_name || '',
+        tipo: carrier.line_type || '',
+        portado: carrier.is_ported === true ? 'SIM' : 'NAO',
+        estado: '',
+        cidade: ''
+      });
+      return;
+    }
     
-    const response = await fetch(`${apiUrl}?numero=${encodeURIComponent(numero)}&login=${encodeURIComponent(login)}&senha=${encodeURIComponent(senha)}`);
+    // ── API CUSTOM (legado) ────────────────────────────────────
+    if (!apiUrl) {
+      return res.status(503).json({ error: 'API de consulta não configurada. Configure em Configurações.' });
+    }
+    
+    console.log('Consultando operadora (custom):', numero, 'URL:', apiUrl);
+    
+    const response = await fetch(`${apiUrl}?numero=${encodeURIComponent(numero)}&login=${encodeURIComponent(login || 'admin')}&senha=${encodeURIComponent(senha || '123')}`);
     const data = await response.json();
     res.json(data);
   } catch(e) {
