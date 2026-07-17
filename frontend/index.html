@@ -1867,7 +1867,7 @@ async function gerarTermoRapido(id) {
     const empresa = p.empresa || '___________________________';
     const doc     = p.cnpj_cpf || '___________________________';
     const numeros = p.numeros || [];
-    const opOrigem = p.operadora_origem ? p.operadora_origem.toUpperCase() : 'OPERADORA ORIGEM';
+    const opDestino = p.operadora_destino ? p.operadora_destino.toUpperCase() : 'OPERADORA DESTINO';
     const tipoDoc = doc.includes('/') || doc.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF';
 
     const numHtml = numeros.length
@@ -1886,7 +1886,7 @@ async function gerarTermoRapido(id) {
         Solicitação de Portabilidade Numérica
       </div>
       <p style="margin-bottom:12px;text-align:justify">
-        ${opOrigem}<br>A/C: Departamento Portabilidade Numérica
+        ${opDestino}<br>A/C: Departamento Portabilidade Numérica
       </p>
       <p style="margin-bottom:12px;text-align:justify">
         Eu, ${u(empresa)}, inscrito no ${tipoDoc} sob nº ${u(doc)}, venho através desta, solicitar portabilidade do:
@@ -1925,8 +1925,8 @@ function gerarTermoPortabilidade() {
   const empresa  = document.getElementById('pEmpresa').value.trim()  || '___________________________';
   const doc      = document.getElementById('pDoc').value.trim()       || '___________________________';
   const numeros  = [...portaNumTags];
-  const opOrigemSel = document.getElementById('pOpOrigem');
-  const opOrigem = opOrigemSel.selectedIndex > 0 ? opOrigemSel.options[opOrigemSel.selectedIndex].text.trim().toUpperCase() : 'OPERADORA ORIGEM';
+  const opDestinoSel = document.getElementById('pOpDestino');
+  const opDestino = opDestinoSel.selectedIndex > 0 ? opDestinoSel.options[opDestinoSel.selectedIndex].text.trim().toUpperCase() : 'OPERADORA DESTINO';
 
   const tipoDoc  = doc.includes('/') || doc.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF';
 
