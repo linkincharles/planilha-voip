@@ -1075,13 +1075,8 @@ app.put('/api/portabilidade/:id', requirePermissao('editar_portabilidade'), asyn
 // Remover pedido
 app.delete('/api/portabilidade/:id', requirePermissao('remover_portabilidade'), async (req, res) => {
   const p = await getPedido(req.params.id);
-  // Remove arquivos físicos
-  if (p?.docs?.length) {
-    p.docs.forEach(d => {
-      const f = path.join(docsDir, d.nome_arquivo);
-      if (fs.existsSync(f)) fs.unlinkSync(f);
-    });
-  }
+  // Documentos estão no banco (BLOB) — remover junto
+  await pool.query('DELETE FROM portabilidade_docs WHERE pedido_id = ?', [req.params.id]);
   await pool.query('DELETE FROM portabilidade WHERE id = ?', [req.params.id]);
   await logAction((req.user||{}).userId || req.session.userId, 'REMOVER_PORTA', 'portabilidade', req.params.id, { empresa: p?.empresa });
   res.json({ ok: true });
